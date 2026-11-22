@@ -13,7 +13,7 @@ Proyek ini adalah studi kasus seleksi internship Kalbe (Case 1: Healthcare & Hum
 | M0 | Scaffold, konfigurasi, `/api/config` | selesai |
 | M1 | Data layer (SQLite, seed, gambar barcode) | selesai |
 | M2 | Engine keputusan, MockClassifier, tes | selesai |
-| M3 | API lengkap | belum |
+| M3 | API lengkap | selesai |
 | M4 | Web 3D + layar kios | belum |
 | M5 | Model asli (MobileNetV2) + evaluasi | belum |
 | M6 | Dashboard admin | belum |
@@ -52,6 +52,25 @@ Menjalankan tes:
 ```bash
 .venv/bin/python -m pytest          # Windows: .\.venv\Scripts\python.exe -m pytest
 ```
+
+## API
+
+Dokumentasi interaktif tersedia di http://127.0.0.1:8000/docs saat server berjalan.
+
+| Endpoint | Fungsi |
+|---|---|
+| `GET /api/config` | threshold dan backend classifier aktif (`is_mock` untuk banner) |
+| `GET /api/items` | kartu item uji beserta URL foto dan gambar barcode |
+| `GET /api/members/{token}` | poin, setoran hari ini, dan sisa kuota (404 bila tidak dikenal) |
+| `GET /api/bins/{id}` | kepenuhan bin dan apakah masih menerima setoran |
+| `POST /api/verify` | multipart: `member_token`, `bin_id`, `weight_g`, `photo`, `barcode_image?`, `barcode_text?` |
+| `GET /api/admin/transactions` | riwayat transaksi, filter `decision` dan `reason_code` |
+| `GET /api/admin/stats` | setoran per produk, penolakan per alasan, total poin, kepenuhan bin |
+| `GET /api/admin/alerts` | alert bin penuh dan bongkar paksa |
+| `POST /api/admin/bins/{id}/empty` | kosongkan bin (simulasi penjemputan) |
+| `POST /api/admin/bins/{id}/tamper` | picu alert bongkar paksa (simulasi) |
+
+`/api/verify` mencatat **setiap** percobaan sebagai transaksi, baik diterima maupun ditolak. Pengecualiannya adalah pemeriksaan sebelum pintu dibuka: member tidak dikenal (`404`) dan bin penuh 100% (`409`) ditolak tanpa transaksi karena belum ada setoran. Foto setiap setoran disimpan di `uploads/` untuk audit. Endpoint admin tidak memakai autentikasi karena ini simulasi lokal.
 
 ## Konfigurasi (`config.yaml`)
 

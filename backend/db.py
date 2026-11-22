@@ -86,6 +86,12 @@ def now_wib() -> datetime:
     return datetime.now(WIB)
 
 
+def _bin_dict(row) -> dict:
+    result = dict(row)
+    result["fill_pct"] = round(row["current_g"] / row["capacity_g"] * 100, 1)
+    return result
+
+
 def format_ts(dt: datetime) -> str:
     """Ubah datetime (wajib ber-zona waktu) menjadi teks ISO dalam WIB."""
     if dt.tzinfo is None:
@@ -184,23 +190,88 @@ class Database:
     def get_bin(self, bin_id: str) -> dict | None:
         with self._connect() as conn:
             row = conn.execute("SELECT * FROM bins WHERE bin_id = ?", (bin_id,)).fetchone()
-        if not row:
-            return None
-        result = dict(row)
-        result["fill_pct"] = round(row["current_g"] / row["capacity_g"] * 100, 1)
-        return result
+        return _bin_dict(row) if row else None
 
-    def list_transactions(self, limit: int = 100) -> list[dict]:
+    def list_bins(self) -> list[dict]:
         with self._connect() as conn:
-            rows = conn.execute(
-                "SELECT * FROM transactions ORDER BY id DESC LIMIT ?", (limit,)
-            ).fetchall()
+            rows = conn.execute("SELECT * FROM bins ORDER BY bin_id").fetchall()
+        return [_bin_dict(row) for row in rows]
+
+    def list_transactions(self, limit: int = 100, decision: str | None = None,
+                          reason_code: str | None = None) -> list[dict]:
+        """Transaksi terbaru lebih dulu, bisa difilter keputusan dan/atau reason_code."""
+        where, params = [], []
+        if decision:
+            where.append("decision = ?")
+            params.append(decision)
+        if reason_code:
+            where.append("reason_code = ?")
+            params.append(reason_code)
+        sql = "SELECT * FROM transactions"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY id DESC LIMIT ?"
+        with self._connect() as conn:
+            rows = conn.execute(sql, (*params, limit)).fetchall()
         return [dict(row) for row in rows]
 
     def list_alerts(self) -> list[dict]:
         with self._connect() as conn:
             rows = conn.execute("SELECT * FROM alerts ORDER BY id DESC").fetchall()
         return [dict(row) for row in rows]
+
+    # ---------- agregat untuk dashboard ----------
+
+    def transaction_totals(self) -> dict:
+        with self._connect() as conn:
+            row = conn.execute(
+                """SELECT COUNT(*) AS attempts,
+                          COALESCE(SUM(decision = 'ACCEPT'), 0) AS accepted,
+                          COALESCE(SUM(decision = 'REJECT'), 0) AS rejected
+                   FROM transactions"""
+            ).fetchone()
+            points = conn.execute("SELECT COALESCE(SUM(points), 0) FROM point_ledger").fetchone()[0]
+        return {**dict(row), "points_total": points}
+
+    def accepted_count_by_photo_class(self) -> dict[str, int]:
+        """Jumlah setoran DITERIMA per kelas foto (pada ACCEPT, kelas foto = produk terverifikasi)."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                """SELECT photo_class, COUNT(*) FROM transactions
+                   WHERE decision = 'ACCEPT' GROUP BY photo_class"""
+            ).fetchall()
+        return {row[0]: row[1] for row in rows}
+
+    def rejected_count_by_reason(self) -> dict[str, int]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """SELECT reason_code, COUNT(*) FROM transactions
+                   WHERE decision = 'REJECT' GROUP BY reason_code"""
+            ).fetchall()
+        return {row[0]: row[1] for row in rows}
+
+    # ---------- operasi admin (simulasi) ----------
+
+    def empty_bin(self, bin_id: str) -> bool:
+        """Kosongkan bin (simulasi penjemputan) dan selesaikan alert BIN_FULL-nya."""
+        with self._connect() as conn:
+            updated = conn.execute(
+                "UPDATE bins SET current_g = 0, status = 'OK' WHERE bin_id = ?", (bin_id,)
+            ).rowcount
+            conn.execute(
+                "UPDATE alerts SET resolved = 1 WHERE bin_id = ? AND type = 'BIN_FULL' AND resolved = 0",
+                (bin_id,),
+            )
+        return updated > 0
+
+    def create_alert(self, bin_id: str, alert_type: str, detail: str, ts: datetime | None = None) -> dict:
+        with self._connect() as conn:
+            alert_id = conn.execute(
+                "INSERT INTO alerts (ts, bin_id, type, detail) VALUES (?, ?, ?, ?)",
+                (format_ts(ts or now_wib()), bin_id, alert_type, detail),
+            ).lastrowid
+            row = conn.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,)).fetchone()
+        return dict(row)
 
     # ---------- tulis transaksi ----------
 

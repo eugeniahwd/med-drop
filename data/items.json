@@ -1,0 +1,123 @@
+[
+  {
+    "item_id": "it-001",
+    "label": "Entrostop — asli",
+    "photo": "dataset/test/entrostop/entrostop-1.jpg",
+    "barcode": "2000000000015",
+    "weight_g": 20.0,
+    "ground_truth": "entrostop",
+    "expected_decision": "ACCEPT",
+    "expected_reason": "OK",
+    "scenario": "Produk dataset, barcode benar, berat wajar"
+  },
+  {
+    "item_id": "it-002",
+    "label": "Fatigon — tanpa barcode",
+    "photo": "dataset/test/fatigon/fatigon-5.jpg",
+    "barcode": null,
+    "weight_g": 50.0,
+    "ground_truth": "fatigon",
+    "expected_decision": "ACCEPT",
+    "expected_reason": "OK",
+    "scenario": "Produk dataset tanpa barcode (hanya foto): diterima bila keyakinan >= threshold foto saja"
+  },
+  {
+    "item_id": "it-003",
+    "label": "Kalpanax — asli",
+    "photo": "dataset/test/kalpanax/kalpanax-8.jpg",
+    "barcode": "2000000000039",
+    "weight_g": 9.0,
+    "ground_truth": "kalpanax",
+    "expected_decision": "ACCEPT",
+    "expected_reason": "OK",
+    "scenario": "Produk dataset, barcode benar, berat wajar"
+  },
+  {
+    "item_id": "it-004",
+    "label": "Woods' — asli",
+    "photo": "dataset/test/woods/woods-3.jpg",
+    "barcode": "2000000000053",
+    "weight_g": 70.0,
+    "ground_truth": "woods",
+    "expected_decision": "ACCEPT",
+    "expected_reason": "OK",
+    "scenario": "Produk dataset, barcode benar, berat wajar"
+  },
+  {
+    "item_id": "it-005",
+    "label": "Promag — kemasan kosong",
+    "photo": "dataset/test/promag/promag-4.jpg",
+    "barcode": "2000000000046",
+    "weight_g": 12.3,
+    "ground_truth": "promag",
+    "expected_decision": "REJECT",
+    "expected_reason": "WEIGHT_EMPTY",
+    "scenario": "Kemasan kosong: berat hampir sama dengan berat kemasan kosong (tare)"
+  },
+  {
+    "item_id": "it-006",
+    "label": "Woods' — isi diganti benda berat",
+    "photo": "dataset/test/woods/woods-8.jpg",
+    "barcode": "2000000000053",
+    "weight_g": 350.0,
+    "ground_truth": "woods",
+    "expected_decision": "REJECT",
+    "expected_reason": "WEIGHT_OVER",
+    "scenario": "Berat jauh di atas bruto: isi mungkin diganti batu atau benda lain"
+  },
+  {
+    "item_id": "it-007",
+    "label": "Entrostop — barcode Fatigon ditempel",
+    "photo": "dataset/test/entrostop/entrostop-9.jpg",
+    "barcode": "2000000000022",
+    "weight_g": 20.0,
+    "ground_truth": "entrostop",
+    "expected_decision": "REJECT",
+    "expected_reason": "MISMATCH",
+    "scenario": "Barcode milik produk lain: klaim barcode tidak cocok dengan foto"
+  },
+  {
+    "item_id": "it-008",
+    "label": "Kalpanax — barcode tidak terdaftar",
+    "photo": "dataset/test/kalpanax/kalpanax-10.jpg",
+    "barcode": "2000000000992",
+    "weight_g": 9.0,
+    "ground_truth": "kalpanax",
+    "expected_decision": "REJECT",
+    "expected_reason": "BARCODE_INVALID",
+    "scenario": "Barcode tidak valid: kode tidak terdaftar sebagai produk"
+  },
+  {
+    "item_id": "it-009",
+    "label": "Entrostop — foto sedikit buram",
+    "photo": "dataset/test_degraded/entrostop/entrostop-1__blur-ringan.jpg",
+    "barcode": "2000000000015",
+    "weight_g": 20.0,
+    "ground_truth": "entrostop",
+    "expected_decision": "ACCEPT",
+    "expected_reason": "OK",
+    "scenario": "Foto agak buram, tetapi barcode cocok: keyakinan turun namun masih di atas threshold dengan barcode"
+  },
+  {
+    "item_id": "it-010",
+    "label": "Kalpanax — foto buram, tanpa barcode",
+    "photo": "dataset/test_degraded/kalpanax/kalpanax-10__blur-sedang.jpg",
+    "barcode": null,
+    "weight_g": 9.0,
+    "ground_truth": "kalpanax",
+    "expected_decision": "REJECT",
+    "expected_reason": "LOW_CONFIDENCE",
+    "scenario": "Foto buram tanpa barcode: keyakinan di bawah threshold foto saja"
+  },
+  {
+    "item_id": "it-011",
+    "label": "Promag — foto sangat gelap",
+    "photo": "dataset/test_degraded/promag/promag-1__gelap-berat.jpg",
+    "barcode": "2000000000046",
+    "weight_g": 30.0,
+    "ground_truth": "promag",
+    "expected_decision": "REJECT",
+    "expected_reason": "UNIDENTIFIED",
+    "scenario": "Foto sangat gelap: keyakinan di bawah batas minimum sehingga tidak teridentifikasi"
+  }
+]
