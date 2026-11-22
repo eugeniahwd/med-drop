@@ -37,8 +37,9 @@ def main():
         if class_dir.name == "out_of_dataset":
             parts = {"train": [], "val": [], "test": photos}
         else:
-            n_test = n_val = max(1, round(len(photos) * 0.2))
-            parts = {"test": photos[:n_test], "val": photos[n_test:n_test + n_val], "train": photos[n_test + n_val:]}
+            n_train = len(photos) - 2 * max(1, round(len(photos) * 0.2))
+            n_val = max(1, round(len(photos) * 0.2))
+            parts = {"train": photos[:n_train], "val": photos[n_train:n_train + n_val], "test": photos[n_train + n_val:]}
         for split, files in parts.items():
             for f in files:
                 (DATASET / split / class_dir.name).mkdir(parents=True, exist_ok=True)

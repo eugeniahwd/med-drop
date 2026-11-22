@@ -14,7 +14,7 @@ Proyek ini adalah studi kasus seleksi internship Kalbe (Case 1: Healthcare & Hum
 | M1 | Data layer (SQLite, seed, gambar barcode) | selesai |
 | M2 | Engine keputusan, MockClassifier, tes | selesai |
 | M3 | API lengkap | selesai |
-| M4 | Web 3D + layar kios | selesai (4 kartu menunggu foto) |
+| M4 | Web 3D + layar kios | selesai |
 | M5 | Model asli (MobileNetV2) + evaluasi | belum |
 | M6 | Dashboard admin | belum |
 | M7 | Dokumentasi dan bahan laporan | belum |
@@ -130,7 +130,7 @@ Margin kosong tidak dibuat sekecil mungkin karena timbangan load cell punya dera
 
 ## Dataset foto
 
-Foto asli disimpan di `dataset/raw/<class_id>/`, dan nama folder harus sama dengan `class_id`. Folder `train/`, `val/`, dan `test/` dibuat oleh skrip, jadi jangan diisi manual. Setelah menambah atau menghapus foto di `raw/`, jalankan:
+Foto asli disimpan di `dataset/raw/<class_id>/`, dan nama folder harus sama dengan `class_id`. Foto lima produk diambil pemilik proyek. Foto bukan obat (`non_drug`), aerosol/inhaler, dan obat merek lain (`out_of_dataset`) diambil dari Wikimedia Commons dengan lisensi terbuka; sumber, pembuat, dan lisensinya ada di `dataset/raw/SOURCES.md`. Folder `train/`, `val/`, dan `test/` dibuat oleh skrip, jadi jangan diisi manual. Setelah menambah atau menghapus foto di `raw/`, jalankan:
 
 ```bash
 .venv/bin/python scripts/split_dataset.py      # Windows: .\.venv\Scripts\python.exe scripts\split_dataset.py
@@ -171,6 +171,7 @@ docs/       diagram, hasil evaluasi, tangkapan layar
 - Cakupan produk terbatas pada dataset. Tanggal kedaluwarsa tidak dibaca. Obat lepas tanpa kemasan ditolak.
 - Deteksi kemasan kosong berbasis berat mengasumsikan setoran dalam kemasan jual utuh. Karena berat kemasan kosong bervariasi antar-produksi, sisa obat yang sangat sedikit bisa ikut ditolak.
 - Dataset kecil (sekitar 10 foto per produk, sehingga test hanya 2 foto per produk). Angka akurasi bersifat indikatif dan kasar.
+- Foto bukan obat, aerosol, dan obat merek lain berasal dari Wikimedia Commons, sehingga gaya dan latarnya berbeda dari foto produk dan dari kamera di dalam mesin. Hasil uji belum mewakili kondisi mesin sungguhan.
 - Skenario "barcode saja tanpa obat" (misalnya potongan dus berbarcode dimasukkan sendirian) belum diuji karena tidak ada fotonya.
 - Barcode bersifat dummy (EAN-13 berawalan 2), bukan kode produk asli. 2D barcode BPOM (DataMatrix berisi batch dan tanggal kedaluwarsa) belum dibaca. Itu, beserta integrasi master data produsen, adalah pekerjaan lanjutan.
 - Penerapan nyata membutuhkan vendor pengelola limbah B3 berizin, pengaturan kategori yang boleh diterima (misalnya narkotika/psikotropika dan benda tajam ditolak), dan persetujuan regulator.

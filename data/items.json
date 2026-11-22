@@ -119,5 +119,38 @@
     "expected_decision": "REJECT",
     "expected_reason": "UNIDENTIFIED",
     "scenario": "The photo is too dark for the item to be recognized."
+  },
+  {
+    "item_id": "it-012",
+    "label": "Plastic bottle with an Entrostop barcode",
+    "photo": "dataset/test/non_drug/botol-02.jpg",
+    "barcode": "2000000000015",
+    "weight_g": 25.0,
+    "ground_truth": "non_drug",
+    "expected_decision": "REJECT",
+    "expected_reason": "UNIDENTIFIED",
+    "scenario": "Registered barcode, but the item is junk. The barcode is only a claim; the photo shows it is not a medicine."
+  },
+  {
+    "item_id": "it-013",
+    "label": "Doreta, a brand outside the dataset",
+    "photo": "dataset/test/out_of_dataset/doreta-01.jpg",
+    "barcode": null,
+    "weight_g": 20.0,
+    "ground_truth": "out_of_dataset",
+    "expected_decision": "REJECT",
+    "expected_reason": "UNIDENTIFIED",
+    "scenario": "A medicine the machine was not trained on, without a registered barcode."
+  },
+  {
+    "item_id": "it-014",
+    "label": "Hair spray can",
+    "photo": "dataset/test/aerosol_inhaler/hairspray-03.jpg",
+    "barcode": null,
+    "weight_g": 180.0,
+    "ground_truth": "aerosol_inhaler",
+    "expected_decision": "REJECT",
+    "expected_reason": "PROHIBITED",
+    "scenario": "Pressurized cans are not accepted because they are a safety risk in the bin."
   }
 ]

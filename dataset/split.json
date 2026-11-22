@@ -1,93 +1,140 @@
 {
-  "seed": "meddrop-v1",
-  "val_frac": 0.2,
-  "test_frac": 0.2,
-  "classes": {
-    "entrostop": {
-      "train": [
-        "entrostop-10.jpg",
-        "entrostop-2.jpg",
-        "entrostop-3.jpg",
-        "entrostop-6.jpg",
-        "entrostop-7.jpg",
-        "entrostop-8.png"
-      ],
-      "val": [
-        "entrostop-4.jpg",
-        "entrostop-5.jpg"
-      ],
-      "test": [
-        "entrostop-1.jpg",
-        "entrostop-9.jpg"
-      ]
-    },
-    "fatigon": {
-      "train": [
-        "fatigon-1.jpg",
-        "fatigon-2.jpg",
-        "fatigon-3.jpg",
-        "fatigon-7.jpg",
-        "fatigon-9.jpg"
-      ],
-      "val": [
-        "fatigon-10.jpg",
-        "fatigon-6.jpg"
-      ],
-      "test": [
-        "fatigon-5.jpg",
-        "fatigon-8.jpg"
-      ]
-    },
-    "kalpanax": {
-      "train": [
-        "kalpanax-2.jpg",
-        "kalpanax-4.jpg",
-        "kalpanax-5.jpg",
-        "kalpanax-6.jpg",
-        "kalpanax-7.jpg"
-      ],
-      "val": [
-        "kalpanax-1.jpg",
-        "kalpanax-9.jpg"
-      ],
-      "test": [
-        "kalpanax-10.jpg",
-        "kalpanax-8.jpg"
-      ]
-    },
-    "promag": {
-      "train": [
-        "promag-10.jpg",
-        "promag-2.jpg",
-        "promag-5.png",
-        "promag-6.jpg",
-        "promag-7.jpg"
-      ],
-      "val": [
-        "promag-3.jpg",
-        "promag-9.jpg"
-      ],
-      "test": [
-        "promag-1.jpg",
-        "promag-4.jpg"
-      ]
-    },
-    "woods": {
-      "train": [
-        "woods-1.jpg",
-        "woods-2.jpg",
-        "woods-5.jpg",
-        "woods-7.jpg",
-        "woods-9.png"
-      ],
-      "val": [
-        "woods-4.jpg",
-        "woods-6.jpg"
-      ],
-      "test": [
-        "woods-3.jpg",
-        "woods-8.jpg"
-      ]
-    }
+  "aerosol_inhaler": {
+    "train": [
+      "aerosol-02.jpg",
+      "deodoran-01.jpg",
+      "hairspray-01.jpg",
+      "hairspray-02.jpg",
+      "inhaler-01.jpg",
+      "inhaler-02.jpg",
+      "inhaler-03.jpg"
+    ],
+    "val": [
+      "aerosol-01.jpg",
+      "obatnyamuk-01.jpg"
+    ],
+    "test": [
+      "aerosol-03.jpg",
+      "hairspray-03.jpg"
+    ]
+  },
+  "entrostop": {
+    "train": [
+      "entrostop-10.jpg",
+      "entrostop-2.jpg",
+      "entrostop-3.jpg",
+      "entrostop-6.jpg",
+      "entrostop-7.jpg",
+      "entrostop-8.png"
+    ],
+    "val": [
+      "entrostop-4.jpg",
+      "entrostop-5.jpg"
+    ],
+    "test": [
+      "entrostop-1.jpg",
+      "entrostop-9.jpg"
+    ]
+  },
+  "fatigon": {
+    "train": [
+      "fatigon-1.jpg",
+      "fatigon-2.jpg",
+      "fatigon-3.jpg",
+      "fatigon-7.jpg",
+      "fatigon-9.jpg"
+    ],
+    "val": [
+      "fatigon-10.jpg",
+      "fatigon-6.jpg"
+    ],
+    "test": [
+      "fatigon-5.jpg",
+      "fatigon-8.jpg"
+    ]
+  },
+  "kalpanax": {
+    "train": [
+      "kalpanax-2.jpg",
+      "kalpanax-4.jpg",
+      "kalpanax-5.jpg",
+      "kalpanax-6.jpg",
+      "kalpanax-7.jpg"
+    ],
+    "val": [
+      "kalpanax-1.jpg",
+      "kalpanax-9.jpg"
+    ],
+    "test": [
+      "kalpanax-10.jpg",
+      "kalpanax-8.jpg"
+    ]
+  },
+  "non_drug": {
+    "train": [
+      "batu-01.jpg",
+      "botol-01.jpg",
+      "botol-03.jpg",
+      "kertas-01.jpg",
+      "kotak-01.jpg",
+      "kotak-02.jpg",
+      "sereal-01.jpg"
+    ],
+    "val": [
+      "jamtangan-01.jpg",
+      "pulpen-02.jpg"
+    ],
+    "test": [
+      "botol-02.jpg",
+      "pulpen-01.jpg"
+    ]
+  },
+  "out_of_dataset": {
+    "train": [],
+    "val": [],
+    "test": [
+      "aspirin-01.jpg",
+      "aspirin-02.jpg",
+      "bayer-01.jpg",
+      "blister-01.jpg",
+      "doreta-01.jpg",
+      "jardiance-01.jpg",
+      "palgotal-01.jpg",
+      "zaldiar-01.jpg"
+    ]
+  },
+  "promag": {
+    "train": [
+      "promag-10.jpg",
+      "promag-2.jpg",
+      "promag-5.png",
+      "promag-6.jpg",
+      "promag-7.jpg"
+    ],
+    "val": [
+      "promag-3.jpg",
+      "promag-9.jpg"
+    ],
+    "test": [
+      "promag-1.jpg",
+      "promag-4.jpg"
+    ]
+  },
+  "woods": {
+    "train": [
+      "woods-1.jpg",
+      "woods-2.jpg",
+      "woods-5.jpg",
+      "woods-7.jpg",
+      "woods-9.png"
+    ],
+    "val": [
+      "woods-4.jpg",
+      "woods-6.jpg"
+    ],
+    "test": [
+      "woods-3.jpg",
+      "woods-8.jpg"
+    ]
   }
 }
