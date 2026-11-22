@@ -1,47 +1,23 @@
-"""Pengisian data awal: produk, anggota fiktif, dan satu bin.
+"""Isi data awal: produk, anggota fiktif, dan satu bin. Dipakai scripts/seed_db.py dan tes.
 
-Dipakai oleh scripts/seed_db.py dan oleh tes. Anggota bertanda
-`seed_at_daily_limit` (MBR-0003) diberi setoran contoh hari ini sampai batas
-harian, supaya penolakan QUOTA bisa didemokan. Setoran contoh ini adalah DATA
-DEMO dan bisa dikenali dari photo_path dan photo_conf yang kosong.
+MBR-0003 diberi setoran contoh hari ini sampai batas harian supaya penolakan
+QUOTA bisa didemokan. Setoran contoh ini data demo (photo_path kosong).
 """
 
 import json
 
-from backend import ean13
 from backend.config import ROOT_DIR
 from backend.db import Database, now_wib
 
 DATA_DIR = ROOT_DIR / "data"
-DEMO_BIN = {"bin_id": "BIN-001", "location": "Lobi apotek mitra (simulasi)"}
+DEMO_BIN = {"bin_id": "BIN-001", "location": "Partner pharmacy lobby (simulated)"}
 
 
-def load_seed_files() -> tuple[list, list]:
-    """Kembalikan (produk, anggota) dari data/*.seed.json."""
+def load_seed_files():
+    """(produk, anggota) dari data/*.seed.json."""
     products = json.loads((DATA_DIR / "products.seed.json").read_text(encoding="utf-8"))["products"]
     members = json.loads((DATA_DIR / "members.seed.json").read_text(encoding="utf-8"))["members"]
     return products, members
-
-
-def check_seed_data(classes: list, products: list) -> list[str]:
-    errors = []
-    product_ids = [p["product_id"] for p in products]
-    barcodes = [p["barcode"] for p in products]
-    if len(set(product_ids)) != len(product_ids):
-        errors.append("Ada product_id ganda di products.seed.json")
-    if len(set(barcodes)) != len(barcodes):
-        errors.append("Ada barcode ganda di products.seed.json")
-    for p in products:
-        if not ean13.is_dummy(p["barcode"]):
-            errors.append(f"Barcode {p['product_id']} ({p['barcode']!r}) bukan EAN-13 dummy valid "
-                          "(harus 13 digit, digit cek benar, berawalan 2)")
-        if not 0 < p["tare_g"] < p["gross_g"]:
-            errors.append(f"Berat {p['product_id']} tidak valid (harus 0 < tare_g < gross_g)")
-    for c in classes:
-        if c["kind"] == "product" and c.get("product_id") not in product_ids:
-            errors.append(f"Kelas {c['class_id']} menunjuk product_id {c.get('product_id')!r} "
-                          "yang tidak ada di products.seed.json")
-    return errors
 
 
 def seed(db: Database, cfg: dict, classes: list, products: list, members: list) -> dict:

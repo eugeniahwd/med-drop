@@ -325,6 +325,6 @@ class Database:
         if not already_open:
             conn.execute(
                 "INSERT INTO alerts (ts, bin_id, type, detail) VALUES (?, ?, 'BIN_FULL', ?)",
-                (ts, bin_id, f"Kepenuhan {fill_pct:.1f}% (ambang {alert_fill_pct}%)"),
+                (ts, bin_id, f"Fill level {fill_pct:.1f}% (threshold {alert_fill_pct}%)"),
             )
         conn.execute("UPDATE bins SET status = 'FULL' WHERE bin_id = ?", (bin_id,))

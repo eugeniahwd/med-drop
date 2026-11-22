@@ -4,6 +4,6 @@
   {"class_id": "kalpanax",        "kind": "product",    "product_id": "P-C", "display": "Kalpanax",                   "prohibited": false},
   {"class_id": "promag",          "kind": "product",    "product_id": "P-D", "display": "Promag",                     "prohibited": false},
   {"class_id": "woods",           "kind": "product",    "product_id": "P-E", "display": "Woods'",                     "prohibited": false},
-  {"class_id": "non_drug",        "kind": "reject",                          "display": "Bukan obat / tidak dikenal", "prohibited": false},
+  {"class_id": "non_drug",        "kind": "reject",                          "display": "Not a medicine / unknown", "prohibited": false},
   {"class_id": "aerosol_inhaler", "kind": "prohibited",                      "display": "Aerosol / inhaler",          "prohibited": true}
 ]

@@ -14,7 +14,7 @@ Proyek ini adalah studi kasus seleksi internship Kalbe (Case 1: Healthcare & Hum
 | M1 | Data layer (SQLite, seed, gambar barcode) | selesai |
 | M2 | Engine keputusan, MockClassifier, tes | selesai |
 | M3 | API lengkap | selesai |
-| M4 | Web 3D + layar kios | belum |
+| M4 | Web 3D + layar kios | selesai (4 kartu menunggu foto) |
 | M5 | Model asli (MobileNetV2) + evaluasi | belum |
 | M6 | Dashboard admin | belum |
 | M7 | Dokumentasi dan bahan laporan | belum |
@@ -53,13 +53,24 @@ Menjalankan tes:
 .venv/bin/python -m pytest          # Windows: .\.venv\Scripts\python.exe -m pytest
 ```
 
+## Memakai simulasi
+
+Teks di website memakai bahasa Inggris.
+
+1. Di layar kios (kiri), ketik nomor member atau pilih salah satu *demo member*. Jatah setor `MBR-0003` hari ini sudah habis.
+2. Pintu depan mesin terbuka. Pilih obat di panel kanan (*Choose a medicine*); beratnya bisa diubah dengan slider.
+3. Tekan **Insert into machine**. Pintu ditutup dan dikunci, lampu status menjadi kuning, lalu hasil pemeriksaan muncul.
+4. Bila diterima, trap door miring ke belakang dan obat jatuh ke bin. Bila ditolak, barang dikembalikan lewat pintu pengembalian; tekan **Take your item**.
+
+Panel **Check details** menjelaskan alasan keputusan: aturan mana yang lolos atau gagal, tingkat keyakinan foto terhadap batas lulusnya, hasil barcode, dan posisi berat terhadap batas kosong dan terlalu berat. Hasil yang berbeda dari skenario ditandai. Tombol **Show interior** membuat panel mesin tembus pandang; seret untuk memutar, gulir untuk memperbesar, dan arahkan kursor ke bagian mesin untuk melihat namanya. Semua pustaka (three.js 0.170.0, font Atkinson Hyperlegible) disimpan lokal di `frontend/vendor/`, tanpa CDN.
+
 ## API
 
 Dokumentasi interaktif tersedia di http://127.0.0.1:8000/docs saat server berjalan.
 
 | Endpoint | Fungsi |
 |---|---|
-| `GET /api/config` | threshold dan backend classifier aktif (`is_mock` untuk banner) |
+| `GET /api/config` | threshold, backend classifier aktif (`is_mock`), ID bin mesin, member contoh, dan nama kelas |
 | `GET /api/items` | kartu item uji beserta URL foto dan gambar barcode |
 | `GET /api/members/{token}` | poin, setoran hari ini, dan sisa kuota (404 bila tidak dikenal) |
 | `GET /api/bins/{id}` | kepenuhan bin dan apakah masih menerima setoran |
@@ -76,7 +87,7 @@ Dokumentasi interaktif tersedia di http://127.0.0.1:8000/docs saat server berjal
 
 | Kunci | Arti |
 |---|---|
-| `classifier.backend` | `mock` (sementara, bukan model sungguhan, UI menampilkan banner) atau `keras` (model asli) |
+| `classifier.backend` | `mock` (sementara, bukan model sungguhan) atau `keras` (model asli) |
 | `classifier.threshold_with_barcode` | keyakinan foto minimum bila ada barcode valid |
 | `classifier.threshold_photo_only` | keyakinan foto minimum bila tanpa barcode (lebih ketat) |
 | `classifier.min_confidence_floor` | di bawah nilai ini barang dianggap tidak teridentifikasi |
@@ -103,7 +114,7 @@ Database SQLite tersimpan di `data/meddrop.db` (tidak ikut repo) dan diisi oleh 
 
 Agar penolakan karena kuota bisa didemokan, `MBR-0003` diberi setoran contoh pada hari ini sampai batas hariannya. Setoran ini termasuk data demo dan bisa dikenali dari `photo_path` dan `photo_conf` yang kosong. Batas dihitung per hari kalender WIB, jadi jalankan ulang `seed_db.py` pada hari demo. Untuk mengosongkan semua transaksi dan memulai dari nol, pakai `seed_db.py --reset`.
 
-Kode kemasan disimulasikan sebagai barcode garis EAN-13, jenis yang tercetak di hampir semua kemasan obat. Kodenya dummy dan berawalan `2` (mis. `2000000000015`). Awalan 20–29 dicadangkan GS1 untuk penggunaan internal, jadi tidak bentrok dengan kode produk asli (produk Indonesia umumnya berawalan 899). Gambar barcode untuk setiap produk, plus `2000000000992` (valid tetapi tidak terdaftar) untuk skenario barcode tidak valid, disimpan di `data/barcodes/`. Untuk membuatnya ulang, jalankan `scripts/make_barcode_images.py`. Skrip ini juga memastikan setiap gambar bisa dibaca kembali oleh OpenCV.
+Kode kemasan disimulasikan sebagai barcode garis EAN-13, jenis yang tercetak di hampir semua kemasan obat. Kodenya dummy dan berawalan `2` (mis. `2000000000015`). Awalan 20 sampai 29 dicadangkan GS1 untuk penggunaan internal, jadi tidak bentrok dengan kode produk asli (produk Indonesia umumnya berawalan 899). Gambar barcode untuk setiap produk, plus `2000000000992` (valid tetapi tidak terdaftar) untuk skenario barcode tidak valid, disimpan di `data/barcodes/`. Untuk membuatnya ulang, jalankan `scripts/make_barcode_images.py`. Skrip ini juga memastikan setiap gambar bisa dibaca kembali oleh OpenCV.
 
 ## Aturan berat
 
@@ -115,7 +126,7 @@ Setiap produk punya berat kemasan jual utuh dalam keadaan kosong (tare) dan penu
 | di antaranya | lolos pemeriksaan berat |
 | > bruto × 1,05 | ditolak `WEIGHT_OVER`: terlalu berat, isi mungkin diganti benda lain |
 
-Margin kosong tidak dibuat sekecil mungkin karena timbangan load cell punya derau (umumnya ±0,2–0,5 g) dan berat kemasan kosong bervariasi antar-produksi. Kalau margin terlalu kecil, kemasan kosong yang kebetulan sedikit lebih berat dari data justru lolos sebagai "berisi". Strip tanpa dus lebih ringan dari tare, jadi ditolak dan pengguna diminta menyetor bersama kemasan jualnya.
+Margin kosong tidak dibuat sekecil mungkin karena timbangan load cell punya derau (umumnya ±0,2 sampai 0,5 g) dan berat kemasan kosong bervariasi antar-produksi. Kalau margin terlalu kecil, kemasan kosong yang kebetulan sedikit lebih berat dari data justru lolos sebagai "berisi". Strip tanpa dus lebih ringan dari tare, jadi ditolak dan pengguna diminta menyetor bersama kemasan jualnya.
 
 ## Dataset foto
 
@@ -131,7 +142,7 @@ Foto asli disimpan di `dataset/raw/<class_id>/`, dan nama folder harus sama deng
 | `val` | dipakai selama pelatihan untuk memantau kemajuan dan memilih pengaturan |
 | `test` | disimpan sampai akhir untuk evaluasi, sekaligus sumber foto kartu item di web |
 
-Skrip membagi foto per kelas dengan rasio sekitar 60/20/20 dan seed tetap, sehingga hasilnya selalu sama. Pembagiannya dicatat di `dataset/split.json`. Kelas `out_of_dataset` (kemasan obat di luar lima produk) hanya masuk ke `test`. Skrip menolak berjalan bila menemukan foto kembar, foto yang tidak terbaca, atau format selain JPG/PNG. Kalau skrip dijalankan ulang setelah model dilatih, isi `test` bisa berubah, jadi model perlu dilatih dan dievaluasi ulang.
+Skrip membagi foto per kelas dengan rasio sekitar 60/20/20 dan seed tetap, sehingga hasilnya selalu sama. Pembagiannya dicatat di `dataset/split.json`. Kelas `out_of_dataset` (kemasan obat di luar lima produk) hanya masuk ke `test`. Pakai format JPG/PNG dan pastikan tidak ada foto yang sama dua kali. Kalau skrip dijalankan ulang setelah model dilatih, isi `test` bisa berubah, jadi model perlu dilatih dan dievaluasi ulang.
 
 Varian buram dan gelap untuk skenario uji dibuat dari foto test pertama tiap produk (3 tingkat buram, 3 tingkat gelap) dan disimpan di `dataset/test_degraded/`. Jalankan ulang setelah `split_dataset.py`:
 
@@ -139,7 +150,7 @@ Varian buram dan gelap untuk skenario uji dibuat dari foto test pertama tiap pro
 .venv/bin/python scripts/make_degraded_samples.py   # Windows: .\.venv\Scripts\python.exe scripts\make_degraded_samples.py
 ```
 
-Selama `classifier.backend: mock`, foto dikenali dari folder asalnya di `dataset/test/` (bukan dari isi gambar) dengan keyakinan semu. Untuk foto di `test_degraded/`, keyakinan diturunkan sebanding dengan hilangnya ketajaman dan kecerahan dibanding foto aslinya. Foto yang tidak dikenal mock selalu ditolak. Mock ini bukan model sungguhan dan diganti model asli di M5.
+Selama `classifier.backend: mock`, foto dikenali dari folder asalnya di `dataset/test/` (bukan dari isi gambar) dengan keyakinan semu. Untuk foto di `test_degraded/`, keyakinannya dikurangi sesuai tingkat buram/gelap yang tertulis di nama file (ringan, sedang, berat). Foto yang tidak dikenal mock selalu ditolak. Mock ini bukan model sungguhan dan diganti model asli di M5.
 
 ## Struktur folder
 
@@ -160,6 +171,7 @@ docs/       diagram, hasil evaluasi, tangkapan layar
 - Cakupan produk terbatas pada dataset. Tanggal kedaluwarsa tidak dibaca. Obat lepas tanpa kemasan ditolak.
 - Deteksi kemasan kosong berbasis berat mengasumsikan setoran dalam kemasan jual utuh. Karena berat kemasan kosong bervariasi antar-produksi, sisa obat yang sangat sedikit bisa ikut ditolak.
 - Dataset kecil (sekitar 10 foto per produk, sehingga test hanya 2 foto per produk). Angka akurasi bersifat indikatif dan kasar.
+- Skenario "barcode saja tanpa obat" (misalnya potongan dus berbarcode dimasukkan sendirian) belum diuji karena tidak ada fotonya.
 - Barcode bersifat dummy (EAN-13 berawalan 2), bukan kode produk asli. 2D barcode BPOM (DataMatrix berisi batch dan tanggal kedaluwarsa) belum dibaca. Itu, beserta integrasi master data produsen, adalah pekerjaan lanjutan.
 - Penerapan nyata membutuhkan vendor pengelola limbah B3 berizin, pengaturan kategori yang boleh diterima (misalnya narkotika/psikotropika dan benda tajam ditolak), dan persetujuan regulator.
 - Privasi: anggota memakai token anonim. UU PDP perlu dipertimbangkan bila data dipakai untuk riset.

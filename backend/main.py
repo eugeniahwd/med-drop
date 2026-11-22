@@ -1,13 +1,12 @@
-"""Aplikasi FastAPI MedDrop: route API dan penyajian frontend statis.
+"""Aplikasi FastAPI MedDrop: route API dan penyajian frontend.
 
 Jalankan dari root proyek:
     python -m backend.main
 
-Endpoint admin tidak memakai autentikasi karena ini prototipe simulasi lokal.
+Endpoint admin tidak memakai login karena ini simulasi lokal.
 """
 
 import math
-import threading
 import uuid
 
 import cv2
@@ -17,65 +16,54 @@ from fastapi.staticfiles import StaticFiles
 
 from backend import schemas
 from backend.barcode_reader import read_barcode
-from backend.classifier import Classifier, load_classifier
+from backend.classifier import load_classifier
 from backend.config import ROOT_DIR, load_classes, load_config
 from backend.db import Database, now_wib
 from backend.decision import REASON_TEXTS, decide
-from backend.items import PHOTO_DIRS, load_items
+from backend.items import load_items
+from backend.seed import DEMO_BIN, load_seed_files
 
-APP_NAME = "MedDrop"
-FRONTEND_DIR = ROOT_DIR / "frontend"
 UPLOADS_DIR = ROOT_DIR / "uploads"
-BARCODE_DIR = ROOT_DIR / "data" / "barcodes"
-MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
-def create_app(config: dict | None = None, db: Database | None = None, classifier: Classifier | None = None,
-               classes: list | None = None, uploads_dir=UPLOADS_DIR) -> FastAPI:
-    cfg = config if config is not None else load_config()
-    classes = classes if classes is not None else load_classes()
+def create_app(config=None, db=None, classifier=None, classes=None, uploads_dir=UPLOADS_DIR):
+    cfg = config or load_config()
+    classes = classes or load_classes()
     db = db or Database()
     if not db.path.exists():
-        raise RuntimeError(f"Database {db.path} belum ada. Jalankan dulu: python scripts/seed_db.py")
+        raise RuntimeError("Database belum ada. Jalankan dulu: python scripts/seed_db.py")
     classifier = classifier or load_classifier(cfg, classes)
     items = load_items()
+    demo_members = load_seed_files()[1]
     daily_limit = cfg["points"]["daily_limit_deposits"]
-    # Satu verifikasi pada satu waktu, agar cek kuota dan pencatatan tidak saling mendahului.
-    verify_lock = threading.Lock()
 
-    app = FastAPI(title="MedDrop API", description="Prototipe simulasi. Bukan alat medis.")
-    app.state.config = cfg
+    app = FastAPI(title="MedDrop API", description="Simulation prototype. Not a medical device.")
 
-    def member_state(token: str) -> dict:
+    def member_state(token):
         if db.get_member(token) is None:
-            raise HTTPException(404, "Nomor member tidak dikenal.")
+            raise HTTPException(404, "Member number not recognized.")
         state = db.get_member_state(token)
         return {**state, "daily_limit": daily_limit,
                 "remaining_today": max(daily_limit - state["deposits_today"], 0)}
 
-    def bin_state(bin_id: str) -> dict:
+    def bin_state(bin_id):
         b = db.get_bin(bin_id)
         if b is None:
-            raise HTTPException(404, f"Bin {bin_id} tidak dikenal.")
+            raise HTTPException(404, f"Unknown bin {bin_id}.")
         return {**b, "accepting": b["fill_pct"] < 100}
 
     # ---------- untuk kios ----------
 
     @app.get("/api/config")
     def get_config():
-        clf = cfg["classifier"]
         return {
-            "app_name": APP_NAME,
-            "classifier": {
-                "backend": clf["backend"],
-                "is_mock": classifier.is_mock,
-                "threshold_with_barcode": clf["threshold_with_barcode"],
-                "threshold_photo_only": clf["threshold_photo_only"],
-                "min_confidence_floor": clf["min_confidence_floor"],
-            },
+            "classifier": {**cfg["classifier"], "is_mock": classifier.is_mock},
             "weight": cfg["weight"],
             "points": cfg["points"],
             "bin": cfg["bin"],
+            "machine_bin_id": DEMO_BIN["bin_id"],
+            "demo_members": [{"token": m["token"], "demo_role": m["demo_role"]} for m in demo_members],
+            "classes": [{"class_id": c["class_id"], "display": c["display"]} for c in classes],
         }
 
     @app.get("/api/items", response_model=list[schemas.Item])
@@ -100,44 +88,42 @@ def create_app(config: dict | None = None, db: Database | None = None, classifie
         barcode_text: str | None = Form(None),
     ):
         if not math.isfinite(weight_g):
-            raise HTTPException(422, "Berat tidak valid.")
-        # Pemeriksaan sebelum pintu dibuka: tidak dicatat sebagai transaksi.
+            raise HTTPException(422, "Invalid weight reading.")
+        # Dicek sebelum pintu dibuka, jadi tidak dicatat sebagai transaksi.
         member_state(member_token)
         if not bin_state(bin_id)["accepting"]:
-            raise HTTPException(409, "Mesin penuh, silakan setor di lokasi lain.")
+            raise HTTPException(409, "This machine is full. Please use another drop-off point.")
 
-        photo_bytes = _read_upload(photo)
+        photo_bytes = photo.file.read()
         if cv2.imdecode(np.frombuffer(photo_bytes, np.uint8), cv2.IMREAD_COLOR) is None:
-            raise HTTPException(422, "Foto tidak dapat dibaca.")
-        barcode_bytes = _read_upload(barcode_image) if barcode_image is not None else None
+            raise HTTPException(422, "The photo could not be read.")
+        barcode_bytes = barcode_image.file.read() if barcode_image else None
 
         barcode_result = read_barcode(barcode_bytes, barcode_text)
         photo_pred = classifier.predict(photo_bytes)
-        now = now_wib()
-        photo_path = _save_photo(uploads_dir, photo_bytes, now)
+        result = decide(db.get_member_state(member_token), photo_pred, barcode_result, weight_g,
+                        cfg, db.get_products(), classes)
 
-        with verify_lock:
-            result = decide(db.get_member_state(member_token), photo_pred, barcode_result, weight_g,
-                            cfg, db.get_products(), classes)
-            barcode_signal = result["signals"]["barcode"]
-            transaction_id = db.record_attempt(
-                {
-                    "ts": now,
-                    "bin_id": bin_id,
-                    "member_token": member_token,
-                    "claimed_product_id": barcode_signal["product_id"],
-                    "photo_class": photo_pred["class_id"],
-                    "photo_conf": photo_pred["confidence"],
-                    "barcode_present": barcode_signal["present"],
-                    "barcode_valid": bool(barcode_signal["valid"]),
-                    "weight_g": weight_g,
-                    "decision": result["decision"],
-                    "reason_code": result["reason_code"],
-                    "photo_path": photo_path,
-                },
-                points=result["points_awarded"],
-                alert_fill_pct=cfg["bin"]["alert_fill_pct"],
-            )
+        now = now_wib()
+        barcode = result["signals"]["barcode"]
+        transaction_id = db.record_attempt(
+            {
+                "ts": now,
+                "bin_id": bin_id,
+                "member_token": member_token,
+                "claimed_product_id": barcode["product_id"],
+                "photo_class": photo_pred["class_id"],
+                "photo_conf": photo_pred["confidence"],
+                "barcode_present": barcode["present"],
+                "barcode_valid": bool(barcode["valid"]),
+                "weight_g": weight_g,
+                "decision": result["decision"],
+                "reason_code": result["reason_code"],
+                "photo_path": save_photo(uploads_dir, photo_bytes, now),
+            },
+            points=result["points_awarded"],
+            alert_fill_pct=cfg["bin"]["alert_fill_pct"],
+        )
 
         return {
             "decision": result["decision"],
@@ -153,11 +139,8 @@ def create_app(config: dict | None = None, db: Database | None = None, classifie
     # ---------- untuk dashboard admin ----------
 
     @app.get("/api/admin/transactions", response_model=list[schemas.Transaction])
-    def get_transactions(
-        decision: str | None = Query(None, pattern="^(ACCEPT|REJECT)$"),
-        reason_code: str | None = None,
-        limit: int = Query(200, ge=1, le=1000),
-    ):
+    def get_transactions(decision: str | None = None, reason_code: str | None = None,
+                         limit: int = Query(200, ge=1, le=1000)):
         return db.list_transactions(limit=limit, decision=decision, reason_code=reason_code)
 
     @app.get("/api/admin/stats", response_model=schemas.Stats)
@@ -172,8 +155,7 @@ def create_app(config: dict | None = None, db: Database | None = None, classifie
                 for c in classes if c["kind"] == "product"
             ],
             "rejected_by_reason": [
-                {"reason_code": code, "count": rejected.get(code, 0)}
-                for code in REASON_TEXTS if code != "OK"
+                {"reason_code": code, "count": rejected.get(code, 0)} for code in REASON_TEXTS if code != "OK"
             ],
             "bins": [bin_state(b["bin_id"]) for b in db.list_bins()],
         }
@@ -191,39 +173,23 @@ def create_app(config: dict | None = None, db: Database | None = None, classifie
     @app.post("/api/admin/bins/{bin_id}/tamper", response_model=schemas.Alert)
     def tamper_bin(bin_id: str):
         bin_state(bin_id)
-        return db.create_alert(bin_id, "TAMPER", "Simulasi: pintu bin dibuka paksa")
+        return db.create_alert(bin_id, "TAMPER", "Simulated forced opening of the bin door")
 
-    # ---------- berkas statis ----------
-    # Foto kartu hanya dari split test, plus gambar barcode dummy.
-    for url_prefix, directory in PHOTO_DIRS.items():
-        app.mount(url_prefix, StaticFiles(directory=directory, check_dir=False), name=url_prefix.strip("/"))
-    app.mount("/media/barcodes", StaticFiles(directory=BARCODE_DIR, check_dir=False), name="barcodes")
-    # Dipasang terakhir agar route di atas tetap didahulukan.
-    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+    # ---------- file statis ----------
+    app.mount("/media/test", StaticFiles(directory=ROOT_DIR / "dataset" / "test", check_dir=False))
+    app.mount("/media/test_degraded", StaticFiles(directory=ROOT_DIR / "dataset" / "test_degraded", check_dir=False))
+    app.mount("/media/barcodes", StaticFiles(directory=ROOT_DIR / "data" / "barcodes", check_dir=False))
+    app.mount("/", StaticFiles(directory=ROOT_DIR / "frontend", html=True))  # paling akhir
     return app
 
 
-def _read_upload(upload: UploadFile) -> bytes:
-    data = upload.file.read(MAX_UPLOAD_BYTES + 1)
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(413, "Berkas terlalu besar (maksimum 10 MB).")
-    return data
-
-
-def _save_photo(uploads_dir, photo_bytes: bytes, now) -> str:
-    """Simpan foto setoran untuk audit. Mengembalikan path relatif 'uploads/...'."""
-    if photo_bytes.startswith(b"\x89PNG"):
-        ext = ".png"
-    elif photo_bytes.startswith(b"\xff\xd8"):
-        ext = ".jpg"
-    else:
-        ext = ".img"
-    day = now.strftime("%Y%m%d")
-    name = f"{now:%H%M%S}_{uuid.uuid4().hex[:8]}{ext}"
-    target = uploads_dir / day
-    target.mkdir(parents=True, exist_ok=True)
-    (target / name).write_bytes(photo_bytes)
-    return f"uploads/{day}/{name}"
+def save_photo(uploads_dir, photo_bytes, now):
+    """Simpan foto setoran untuk audit, kembalikan path relatif."""
+    folder = uploads_dir / now.strftime("%Y%m%d")
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"{now:%H%M%S}_{uuid.uuid4().hex[:6]}.jpg"
+    (folder / name).write_bytes(photo_bytes)
+    return f"uploads/{folder.name}/{name}"
 
 
 if __name__ == "__main__":

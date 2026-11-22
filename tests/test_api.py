@@ -66,7 +66,7 @@ def test_member_state_and_unknown_member(env):
         "token": "MBR-0001", "points_total": 0, "deposits_today": 0, "daily_limit": 3, "remaining_today": 3}
     assert client.get("/api/members/MBR-0003").json()["remaining_today"] == 0
     r = client.get("/api/members/MBR-9999")
-    assert r.status_code == 404 and r.json()["detail"] == "Nomor member tidak dikenal."
+    assert r.status_code == 404 and r.json()["detail"] == "Member number not recognized."
 
 
 def test_frontend_is_served_at_root(env):
@@ -92,7 +92,7 @@ def test_accept_response_matches_schema_and_updates_state(env):
     body = post_verify(client, items(client)["it-001"]).json()
 
     assert (body["decision"], body["reason_code"], body["points_awarded"]) == ("ACCEPT", "OK", 10)
-    assert body["reason_text"].startswith("Entrostop terdeteksi")
+    assert body["reason_text"].startswith("Entrostop recognized")
     s = body["signals"]
     assert s["photo"]["class_id"] == "entrostop" and len(s["photo"]["top3"]) == 3
     assert s["barcode"] == {"present": True, "decoded": "2000000000015", "symbology": "EAN_13",
@@ -148,7 +148,7 @@ def test_full_bin_is_refused_without_transaction_until_emptied(env):
     assert client.get(f"/api/bins/{BIN}").json()["accepting"] is False
 
     r = post_verify(client, items(client)["it-001"])
-    assert r.status_code == 409 and r.json()["detail"] == "Mesin penuh, silakan setor di lokasi lain."
+    assert r.status_code == 409 and r.json()["detail"] == "This machine is full. Please use another drop-off point."
     assert len(client.get("/api/admin/transactions").json()) == count
     assert [a["type"] for a in client.get("/api/admin/alerts").json() if not a["resolved"]] == ["BIN_FULL"]
 

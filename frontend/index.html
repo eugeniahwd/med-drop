@@ -1,36 +1,71 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MedDrop</title>
-  <style>
-    body { font-family: system-ui, sans-serif; margin: 0; background: #f4faf7; color: #1d2b24; }
-    main { max-width: 720px; margin: 0 auto; padding: 32px 16px; }
-    .banner { background: #fff3cd; border: 1px solid #e0b800; padding: 8px 12px; font-weight: 600; }
-    pre { background: #fff; border: 1px solid #cfe3d8; padding: 12px; overflow-x: auto; }
-    footer { font-size: 13px; color: #55685e; padding: 16px; text-align: center; }
-  </style>
-</head>
-<body>
-  <div id="mock-banner" class="banner" hidden>MOCK CLASSIFIER AKTIF: hasil identifikasi foto bukan dari model sungguhan.</div>
-  <main>
-    <h1>MedDrop</h1>
-    <p>Halaman sementara (M0). Mesin 3D dan layar kios dibuat di milestone M4.</p>
-    <h2>Konfigurasi aktif</h2>
-    <pre id="config">Memuat…</pre>
-  </main>
-  <footer>Prototipe simulasi untuk studi kasus. Bukan alat medis dan bukan produk jadi.</footer>
-  <script>
-    fetch("/api/config")
-      .then((r) => r.json())
-      .then((cfg) => {
-        document.getElementById("config").textContent = JSON.stringify(cfg, null, 2);
-        document.getElementById("mock-banner").hidden = !cfg.classifier.is_mock;
-      })
-      .catch((e) => {
-        document.getElementById("config").textContent = "Gagal memuat /api/config: " + e;
-      });
+  <title>MedDrop kiosk simulation</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1C8 1 3 7 3 10a5 5 0 0 0 10 0C13 7 8 1 8 1z' fill='%230e7c5a'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    { "imports": {
+        "three": "./vendor/three-0.170.0/three.module.min.js",
+        "three/addons/": "./vendor/three-0.170.0/"
+    } }
   </script>
+</head>
+<body data-state="IDLE">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">MedDrop</span>
+      <span class="brand-sub">Medicine take-back kiosk simulation</span>
+    </div>
+    <nav class="tools" aria-label="Simulation controls">
+      <button type="button" id="btn-xray" class="btn" aria-pressed="false">Show interior</button>
+      <button type="button" id="btn-camera" class="btn">Reset view</button>
+      <button type="button" id="btn-repeat" class="btn" disabled>Repeat last drop-off</button>
+      <button type="button" id="btn-reset" class="btn">Restart</button>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <section id="kiosk" class="kiosk" aria-label="Machine kiosk screen" aria-live="polite"></section>
+
+    <section class="stage" aria-label="3D model of the machine. Drag to rotate, scroll to zoom.">
+      <div id="viewport" class="viewport"></div>
+      <div id="part-tooltip" class="part-tooltip" hidden></div>
+      <details id="machine-status" class="machine-status"></details>
+    </section>
+
+    <aside class="tray" aria-labelledby="tray-title">
+      <h2 id="tray-title">Choose a medicine</h2>
+      <ul id="card-list" class="card-list"></ul>
+      <div id="card-detail" class="card-detail"></div>
+    </aside>
+
+    <section class="signals" aria-labelledby="signals-title">
+      <h2 id="signals-title">Check details</h2>
+      <div id="signals">
+        <p class="muted">Nothing checked yet. Once a medicine goes into the machine, this panel shows why it was
+          accepted or rejected: which rules passed, plus the photo, barcode, and weight readings.</p>
+      </div>
+    </section>
+
+    <section class="log" aria-labelledby="log-title">
+      <h2 id="log-title">Drop-off history</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Member</th><th>Medicine</th><th>Weight</th><th>Result</th><th>Reason and state sequence</th><th>Matches scenario</th></tr>
+          </thead>
+          <tbody id="log-body">
+            <tr id="log-empty"><td colspan="7" class="muted">No drop-offs yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -21,23 +21,23 @@ ACCEPT = "ACCEPT"
 REJECT = "REJECT"
 
 REASON_TEXTS = {
-    "OK": "{product} terdeteksi. Terima kasih, poin berhasil ditambahkan.",
-    "QUOTA": "Batas setoran harian Anda ({limit} kali per hari) sudah tercapai. "
-             "Silakan ambil kembali barang Anda dan setor lagi besok.",
-    "PROHIBITED": "Aerosol dan inhaler tidak dapat diterima karena kemasannya bertekanan. "
-                  "Silakan ambil kembali barang Anda dan serahkan langsung ke petugas apotek.",
-    "UNIDENTIFIED": "Barang tidak dapat diidentifikasi. Silakan bawa ke apotek, "
-                    "atau ikuti panduan pemusnahan obat di rumah dari Kemenkes.",
-    "BARCODE_INVALID": "Barcode tidak dikenali sebagai produk yang diterima mesin ini. "
-                       "Silakan ambil kembali barang Anda dan bawa ke apotek.",
-    "MISMATCH": "Barcode tidak cocok dengan kemasan yang terlihat di kamera. "
-                "Silakan ambil kembali barang Anda lalu coba lagi.",
-    "LOW_CONFIDENCE": "Kemasan belum dapat dikenali dengan yakin. Silakan ambil kembali barang Anda, "
-                      "letakkan dengan sisi depan menghadap kamera, lalu coba lagi.",
-    "WEIGHT_EMPTY": "Kemasan {product} tampak kosong atau tidak lengkap. Mesin hanya menerima obat yang masih "
-                    "berisi dan disetor bersama kemasan jualnya (dus atau botol). Silakan ambil kembali barang Anda.",
-    "WEIGHT_OVER": "Berat barang melebihi berat wajar {product} dalam kemasan penuh. "
-                   "Silakan ambil kembali barang Anda.",
+    "OK": "{product} recognized. Thank you, your points have been added.",
+    "QUOTA": "You have reached today's limit of {limit} drop-offs. "
+             "Please take your item back and come again tomorrow.",
+    "PROHIBITED": "Aerosols and inhalers cannot be accepted because they are pressurized. "
+                  "Please take your item back and hand it to the pharmacy staff.",
+    "UNIDENTIFIED": "This item could not be identified. Please take it to a pharmacy, "
+                    "or follow the Ministry of Health guide for disposing of medicine at home.",
+    "BARCODE_INVALID": "This barcode is not registered in the machine. "
+                       "Please take your item back and bring it to a pharmacy.",
+    "MISMATCH": "The barcode does not match the package seen by the camera. "
+                "Please take your item back and try again.",
+    "LOW_CONFIDENCE": "The package could not be recognized clearly. Please take your item back "
+                      "and insert it again with the front of the package facing up.",
+    "WEIGHT_EMPTY": "This {product} package looks empty or incomplete. The machine only accepts medicine "
+                    "that still has contents, in its box or bottle. Please take your item back.",
+    "WEIGHT_OVER": "This item is heavier than a full package of {product}. "
+                   "Please take your item back.",
 }
 
 
