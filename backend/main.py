@@ -64,6 +64,8 @@ def create_app(config=None, db=None, classifier=None, classes=None, uploads_dir=
             "machine_bin_id": DEMO_BIN["bin_id"],
             "demo_members": [{"token": m["token"], "demo_role": m["demo_role"]} for m in demo_members],
             "classes": [{"class_id": c["class_id"], "display": c["display"]} for c in classes],
+            "products": [{"product_id": p["product_id"], "display": p["display"], "barcode": p["barcode"]}
+                         for p in db.get_products().values()],
         }
 
     @app.get("/api/items", response_model=list[schemas.Item])

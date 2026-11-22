@@ -17,6 +17,7 @@ BIN = "BIN-001"
 @pytest.fixture
 def env(tmp_path):
     cfg, classes = load_config(), load_classes()
+    cfg["classifier"]["backend"] = "mock"  # tes API selalu memakai mock, apa pun isi config.yaml
     products, members = load_seed_files()
     db = Database(tmp_path / "test.db")
     seed(db, cfg, classes, products, members)

@@ -143,7 +143,18 @@ function expectText(decision, reason) {
 }
 
 export function cardListHtml(items, selectedId) {
-  return items.map((card) => `
+  const upload = `
+    <li>
+      <button type="button" class="card-row ${selectedId === "upload" ? "is-selected" : ""}"
+        data-action="select-card" data-id="upload" aria-pressed="${selectedId === "upload"}">
+        <span class="upload-thumb" aria-hidden="true">+</span>
+        <span class="card-text">
+          <span class="card-label">Your own photo</span>
+          <span class="card-expect">Upload or take a photo to test the model</span>
+        </span>
+      </button>
+    </li>`;
+  return upload + items.map((card) => `
     <li>
       <button type="button" class="card-row ${card.item_id === selectedId ? "is-selected" : ""}"
         data-action="select-card" data-id="${esc(card.item_id)}" aria-pressed="${card.item_id === selectedId}">
@@ -167,16 +178,42 @@ export function cardDetailHtml(card, weight, canPlace) {
         : `<p class="detail-nobarcode">No barcode</p>`}
     </div>
     <p class="detail-scenario">${esc(card.scenario)}</p>
+    ${weightControls(weight)}
+    ${changed ? `<p class="weight-note">Weight changed, so the result may differ from the scenario.
+      <button type="button" class="link" data-action="reset-weight">Reset to ${grams(card.weight_g)}</button></p>` : ""}
+    <button type="button" class="btn btn-primary btn-wide" data-action="place" ${canPlace ? "" : "disabled"}>Insert into machine</button>
+    ${canPlace ? "" : DOOR_HINT}`;
+}
+
+const DOOR_HINT = `<p class="muted small">Enter a member number on the kiosk first to open the door.</p>`;
+
+function weightControls(weight) {
+  return `
     <label class="weight-label" for="weight-number">Weight on the scale</label>
     <div class="weight-controls">
       <input type="range" id="weight-range" min="0" max="400" step="0.1" value="${esc(weight)}" aria-label="Drag to change the weight">
       <input type="number" id="weight-number" min="0" max="5000" step="0.01" value="${esc(weight)}">
       <span>g</span>
-    </div>
-    ${changed ? `<p class="weight-note">Weight changed, so the result may differ from the scenario.
-      <button type="button" class="link" data-action="reset-weight">Reset to ${grams(card.weight_g)}</button></p>` : ""}
-    <button type="button" class="btn btn-primary btn-wide" data-action="place" ${canPlace ? "" : "disabled"}>Insert into machine</button>
-    ${canPlace ? "" : `<p class="muted small">Enter a member number on the kiosk first to open the door.</p>`}`;
+    </div>`;
+}
+
+/** Panel untuk menguji foto sendiri: unggah/foto, pilih barcode (opsional), atur berat. */
+export function uploadDetailHtml(upload, products, weight, canPlace) {
+  const option = (code, text) =>
+    `<option value="${esc(code)}" ${upload.barcode === code ? "selected" : ""}>${esc(text)}</option>`;
+  return `
+    <label class="weight-label" for="upload-file">Photo of the item</label>
+    <input type="file" id="upload-file" accept="image/*" capture="environment">
+    ${upload.url ? `<img class="upload-preview" src="${esc(upload.url)}" alt="Your photo">` : ""}
+    <label class="weight-label" for="upload-barcode">Barcode on the package</label>
+    <select id="upload-barcode">
+      ${option("", "No barcode")}
+      ${products.map((p) => option(p.barcode, `${p.display} (${p.barcode})`)).join("")}
+      ${option("2000000000992", "Unregistered barcode (2000000000992)")}
+    </select>
+    ${weightControls(weight)}
+    <button type="button" class="btn btn-primary btn-wide" data-action="place" ${canPlace && upload.url ? "" : "disabled"}>Insert into machine</button>
+    ${!canPlace ? DOOR_HINT : upload.url ? "" : `<p class="muted small">Choose a photo first.</p>`}`;
 }
 
 // ---------- machine status (compact; details on click) ----------
@@ -196,16 +233,17 @@ export function statusHtml(label, outputs) {
 export function signalsHtml({ result, card, weight, expected, config, classNames }) {
   const s = result.signals;
   const accepted = result.decision === "ACCEPT";
-  const matches = result.decision === expected.decision && (!expected.reason || result.reason_code === expected.reason);
+  // expected kosong untuk foto unggahan sendiri: tidak ada hasil yang "seharusnya".
+  const matches = expected && result.decision === expected.decision && (!expected.reason || result.reason_code === expected.reason);
   return `
     <div class="verdict ${accepted ? "ok" : "bad"}">
       <p class="verdict-title">${accepted ? "Accepted" : `Rejected: ${esc(REASON_LABELS[result.reason_code].toLowerCase())}`}
         <code>${esc(result.reason_code)}</code></p>
       <p class="verdict-text">${esc(result.reason_text)}</p>
-      ${matches
+      ${!expected ? "" : matches
         ? `<p class="expect ok">This matches the scenario.</p>`
         : `<p class="expect warn" role="status">This does not match the scenario. ${esc(expectText(expected.decision, expected.reason))}.</p>`}
-      ${expected.note ? `<p class="expect note">${esc(expected.note)}</p>` : ""}
+      ${expected?.note ? `<p class="expect note">${esc(expected.note)}</p>` : ""}
     </div>
     <ol class="rules">${rulesHtml(result.reason_code)}</ol>
     <div class="signal-grid">
@@ -263,7 +301,7 @@ function barcodeSignal(barcode, card) {
 function weightSignal(w, measured) {
   if (w.status === null) {
     return `<section class="signal"><h3>Weight</h3><p class="signal-main">${grams(measured)}</p>
-      <p class="signal-sub">Not checked because the item was not recognized.</p></section>`;
+      <p class="signal-sub">Not checked because the item is not one of the registered products.</p></section>`;
   }
   const max = Math.max(w.over_limit_g * 1.3, measured * 1.1, 1);
   const at = (g) => `${Math.min(100, (g / max) * 100)}%`;
@@ -291,7 +329,7 @@ export function logRowHtml(entry) {
   const cls = entry.decision === "ACCEPT" ? "row-ok" : "row-bad";
   const decision = entry.error ? "Error" : entry.decision === "ACCEPT" ? "Accepted" : "Rejected";
   const reason = entry.error ? esc(entry.error) : `${esc(REASON_LABELS[entry.reason])} <code>${esc(entry.reason)}</code>`;
-  const match = entry.error ? "n/a" : entry.matches ? "Yes" : `<strong class="bad-text">No</strong>`;
+  const match = entry.error || entry.matches == null ? "n/a" : entry.matches ? "Yes" : `<strong class="bad-text">No</strong>`;
   return `
     <tr class="${cls}">
       <td>${esc(entry.time)}</td><td>${esc(entry.member)}</td><td>${esc(entry.card)}</td><td>${grams(entry.weight)}</td>

@@ -15,7 +15,7 @@ Proyek ini adalah studi kasus seleksi internship Kalbe (Case 1: Healthcare & Hum
 | M2 | Engine keputusan, MockClassifier, tes | selesai |
 | M3 | API lengkap | selesai |
 | M4 | Web 3D + layar kios | selesai |
-| M5 | Model asli (MobileNetV2) + evaluasi | belum |
+| M5 | Model asli (MobileNetV2) + evaluasi | selesai |
 | M6 | Dashboard admin | belum |
 | M7 | Dokumentasi dan bahan laporan | belum |
 
@@ -87,7 +87,7 @@ Dokumentasi interaktif tersedia di http://127.0.0.1:8000/docs saat server berjal
 
 | Kunci | Arti |
 |---|---|
-| `classifier.backend` | `mock` (sementara, bukan model sungguhan) atau `keras` (model asli) |
+| `classifier.backend` | `keras` (model asli, bawaan) atau `mock` (pengganti sementara yang dipakai tes API) |
 | `classifier.threshold_with_barcode` | keyakinan foto minimum bila ada barcode valid |
 | `classifier.threshold_photo_only` | keyakinan foto minimum bila tanpa barcode (lebih ketat) |
 | `classifier.min_confidence_floor` | di bawah nilai ini barang dianggap tidak teridentifikasi |
@@ -128,6 +128,28 @@ Setiap produk punya berat kemasan jual utuh dalam keadaan kosong (tare) dan penu
 
 Margin kosong tidak dibuat sekecil mungkin karena timbangan load cell punya derau (umumnya ±0,2 sampai 0,5 g) dan berat kemasan kosong bervariasi antar-produksi. Kalau margin terlalu kecil, kemasan kosong yang kebetulan sedikit lebih berat dari data justru lolos sebagai "berisi". Strip tanpa dus lebih ringan dari tare, jadi ditolak dan pengguna diminta menyetor bersama kemasan jualnya.
 
+## Model foto
+
+Classifier memakai MobileNetV2 (bobot ImageNet) dengan lapisan klasifikasi baru untuk 7 kelas. Base dibekukan dulu, lalu 20 lapisan terakhirnya ikut dilatih (fine-tune). Model tersimpan di `model/` dan ikut repo, jadi tidak perlu dilatih ulang untuk menjalankan demo.
+
+```bash
+.venv/bin/python scripts/train.py --fine-tune   # latih ulang (sekitar 1 menit di CPU)
+.venv/bin/python scripts/evaluate.py            # hasil di docs/eval/
+```
+
+Hasil pada split test (22 foto; lihat `docs/eval/report.md` dan `docs/eval/confusion_matrix.png`):
+
+| Metrik | Nilai |
+|---|---|
+| Akurasi 7 kelas | 93% (13 dari 14) |
+| False Accept Rate (barang yang seharusnya ditolak tetapi diterima), hanya foto | 0% dari 12 |
+| False Accept Rate, dengan barcode produk yang cocok | 0% dari 12 |
+| Produk asli yang ditolak walau barcode dan berat benar | 0% dari 10 |
+
+Obat merek lain tetap ditebak sebagai salah satu kelas yang dikenal (misalnya Jardiance sebagai Kalpanax), tetapi keyakinannya di bawah batas lulus sehingga ditolak. Di demo, kartu "Fatigon, no barcode" masih ditolak karena keyakinan 75% belum mencapai batas foto saja (85%). Kegagalan seperti ini sengaja ditampilkan apa adanya.
+
+Di panel kanan ada pilihan **Your own photo** untuk menguji foto baru: unggah foto atau ambil dengan kamera HP, pilih barcode yang tertera (boleh tanpa barcode), atur berat, lalu masukkan ke mesin seperti kartu lain.
+
 ## Dataset foto
 
 Foto asli disimpan di `dataset/raw/<class_id>/`, dan nama folder harus sama dengan `class_id`. Foto lima produk diambil pemilik proyek. Foto bukan obat (`non_drug`), aerosol/inhaler, dan obat merek lain (`out_of_dataset`) diambil dari Wikimedia Commons dengan lisensi terbuka; sumber, pembuat, dan lisensinya ada di `dataset/raw/SOURCES.md`. Folder `train/`, `val/`, dan `test/` dibuat oleh skrip, jadi jangan diisi manual. Setelah menambah atau menghapus foto di `raw/`, jalankan:
@@ -150,7 +172,7 @@ Varian buram dan gelap untuk skenario uji dibuat dari foto test pertama tiap pro
 .venv/bin/python scripts/make_degraded_samples.py   # Windows: .\.venv\Scripts\python.exe scripts\make_degraded_samples.py
 ```
 
-Selama `classifier.backend: mock`, foto dikenali dari folder asalnya di `dataset/test/` (bukan dari isi gambar) dengan keyakinan semu. Untuk foto di `test_degraded/`, keyakinannya dikurangi sesuai tingkat buram/gelap yang tertulis di nama file (ringan, sedang, berat). Foto yang tidak dikenal mock selalu ditolak. Mock ini bukan model sungguhan dan diganti model asli di M5.
+Kalau `classifier.backend` diganti ke `mock` (dipakai tes API), foto dikenali dari folder asalnya di `dataset/test/` (bukan dari isi gambar) dengan keyakinan semu. Untuk foto di `test_degraded/`, keyakinannya dikurangi sesuai tingkat buram/gelap yang tertulis di nama file (ringan, sedang, berat). Foto yang tidak dikenal mock selalu ditolak. Mock ini bukan model sungguhan dan diganti model asli di M5.
 
 ## Struktur folder
 
@@ -171,6 +193,7 @@ docs/       diagram, hasil evaluasi, tangkapan layar
 - Cakupan produk terbatas pada dataset. Tanggal kedaluwarsa tidak dibaca. Obat lepas tanpa kemasan ditolak.
 - Deteksi kemasan kosong berbasis berat mengasumsikan setoran dalam kemasan jual utuh. Karena berat kemasan kosong bervariasi antar-produksi, sisa obat yang sangat sedikit bisa ikut ditolak.
 - Dataset kecil (sekitar 10 foto per produk, sehingga test hanya 2 foto per produk). Angka akurasi bersifat indikatif dan kasar.
+- Model hanya mengenal 7 kelas. Barang di luar itu (obat merek lain, kaleng minuman) tetap ditebak sebagai salah satu kelas, dan keamanan mesin bergantung pada batas keyakinan di engine keputusan. Contohnya foto kaleng minuman ditebak sebagai aerosol.
 - Foto bukan obat, aerosol, dan obat merek lain berasal dari Wikimedia Commons, sehingga gaya dan latarnya berbeda dari foto produk dan dari kamera di dalam mesin. Hasil uji belum mewakili kondisi mesin sungguhan.
 - Skenario "barcode saja tanpa obat" (misalnya potongan dus berbarcode dimasukkan sendirian) belum diuji karena tidak ada fotonya.
 - Barcode bersifat dummy (EAN-13 berawalan 2), bukan kode produk asli. 2D barcode BPOM (DataMatrix berisi batch dan tanggal kedaluwarsa) belum dibaca. Itu, beserta integrasi master data produsen, adalah pekerjaan lanjutan.

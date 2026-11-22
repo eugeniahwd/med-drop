@@ -51,7 +51,5 @@ def test_unknown_photo_is_not_recognized(mock):
     assert r["class_id"] == "non_drug" and r["confidence"] < 0.5
 
 
-def test_factory_picks_backend_from_config():
+def test_factory_picks_mock_from_config():
     assert load_classifier({"classifier": {"backend": "mock"}}, CLASSES).is_mock
-    with pytest.raises(NotImplementedError):
-        load_classifier({"classifier": {"backend": "keras"}}, CLASSES)

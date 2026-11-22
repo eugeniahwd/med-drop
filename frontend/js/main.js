@@ -17,6 +17,7 @@ const app = {
   weight: null,   // berat yang "ditimbang"
   attempt: null,  // setoran yang sedang berjalan
   lastRun: null,  // untuk tombol Repeat last drop-off
+  upload: { url: null, barcode: "" },  // foto unggahan sendiri
   kioskView: { kind: "idle" },
 };
 let sm;
@@ -82,8 +83,8 @@ async function startSession(rawToken) {
 }
 
 async function placeItem() {
-  if (sm.state !== "HATCH_OPEN" || !app.card) return;
-  const card = app.card;
+  const card = app.card?.item_id === "upload" ? uploadCard() : app.card;
+  if (sm.state !== "HATCH_OPEN" || !card?.photo_url) return;
   const weight = Number(app.weight);
   app.attempt = { card, weight, member: app.member, trail: ["HATCH_OPEN"], time: now() };
   app.lastRun = { token: app.member.token, card, weight };
@@ -157,16 +158,33 @@ async function repeatLast() {
 // ---------- kartu, rincian, riwayat ----------
 
 function selectCard(itemId, weight) {
-  app.card = app.items.find((card) => card.item_id === itemId) || null;
-  app.weight = weight ?? app.card?.weight_g ?? null;
+  if (itemId === "upload") {
+    app.weight = weight ?? app.weight ?? 20;
+    app.card = uploadCard();
+  } else {
+    app.card = app.items.find((card) => card.item_id === itemId) || null;
+    app.weight = weight ?? app.card?.weight_g ?? null;
+  }
   renderCards();
+}
+
+// Foto unggahan diperlakukan seperti kartu, tapi tanpa hasil yang "seharusnya".
+function uploadCard() {
+  const barcode = app.upload.barcode || null;
+  return {
+    item_id: "upload", label: "Your own photo", photo_url: app.upload.url, barcode,
+    barcode_image_url: barcode ? `/media/barcodes/${barcode}.png` : null,
+    weight_g: app.weight, expected_decision: null, expected_reason: null,
+  };
 }
 
 function renderCards() {
   if (!sm) return;
   const canPlace = sm.state === "HATCH_OPEN" && Boolean(app.card);
   $("#card-list").innerHTML = ui.cardListHtml(app.items, app.card?.item_id);
-  $("#card-detail").innerHTML = ui.cardDetailHtml(app.card, app.weight, canPlace);
+  $("#card-detail").innerHTML = app.card?.item_id === "upload"
+    ? ui.uploadDetailHtml(app.upload, app.config.products, app.weight, canPlace)
+    : ui.cardDetailHtml(app.card, app.weight, canPlace);
   $("#btn-repeat").disabled = !app.lastRun || !["IDLE", "DONE"].includes(sm.state);
 }
 
@@ -176,6 +194,7 @@ function expectationFor(attempt) {
     return { decision: "REJECT", reason: "QUOTA",
       note: "This member has already used up today's drop-offs, so any item should be rejected." };
   }
+  if (!attempt.card.expected_decision) return null;  // foto unggahan sendiri
   const note = attempt.weight !== attempt.card.weight_g
     ? "The weight was changed by hand, so the result may differ from the scenario." : "";
   return { decision: attempt.card.expected_decision, reason: attempt.card.expected_reason, note };
@@ -200,7 +219,9 @@ function finishAttempt() {
     decision: a.result?.decision,
     reason: a.result?.reason_code,
     error: a.error,
-    matches: a.result && a.result.decision === expected.decision && (!expected.reason || a.result.reason_code === expected.reason),
+    matches: expected && a.result
+      ? a.result.decision === expected.decision && (!expected.reason || a.result.reason_code === expected.reason)
+      : null,
     trail: a.trail,
   });
   app.attempt = null;
@@ -243,7 +264,15 @@ function bindEvents() {
     $(event.target.id === "weight-range" ? "#weight-number" : "#weight-range").value = event.target.value;
   });
   document.addEventListener("change", (event) => {
-    if (["weight-range", "weight-number"].includes(event.target.id)) renderCards();
+    const { id } = event.target;
+    if (id === "upload-file" && event.target.files[0]) {
+      app.upload.url = URL.createObjectURL(event.target.files[0]);
+    } else if (id === "upload-barcode") {
+      app.upload.barcode = event.target.value;
+    } else if (!["weight-range", "weight-number"].includes(id)) {
+      return;
+    }
+    renderCards();
   });
 
   $("#btn-xray").addEventListener("click", (event) => {

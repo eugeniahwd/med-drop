@@ -1,7 +1,7 @@
 # Konfigurasi MedDrop. Dibaca backend saat server dijalankan (restart setelah mengubah).
 
 classifier:
-  backend: mock                # mock | keras. "mock" BUKAN model sungguhan; UI menampilkan banner.
+  backend: keras               # keras = model asli (model/model.keras); mock = pengganti sementara untuk tes
   threshold_with_barcode: 0.60 # keyakinan foto minimum bila ada barcode yang valid
   threshold_photo_only: 0.85   # keyakinan foto minimum bila tanpa barcode (lebih ketat)
   min_confidence_floor: 0.50   # di bawah nilai ini barang dianggap tidak teridentifikasi

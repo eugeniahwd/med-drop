@@ -1,11 +1,14 @@
-# Dependensi inti MedDrop (diuji dengan Python 3.12 di Windows 11).
-# Dependensi model asli (TensorFlow, dsb.) ditambahkan di milestone M5.
+# Dependensi MedDrop (diuji dengan Python 3.12 di Windows 11).
 fastapi==0.165.0
 uvicorn==0.54.0
 python-multipart==0.0.34
 PyYAML==6.0.4
 opencv-python-headless==5.1.0.95
 numpy==2.5.5
+
+# Model asli (classifier.backend: keras). TensorFlow cukup besar, sekitar 500 MB.
+tensorflow==2.21.0
+matplotlib==3.11.2
 
 # Pengujian
 pytest==9.2.0
