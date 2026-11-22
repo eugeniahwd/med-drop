@@ -42,8 +42,8 @@ def check_seed_data(classes: list, products: list) -> list[str]:
         if not ean13.is_dummy(p["barcode"]):
             errors.append(f"Barcode {p['product_id']} ({p['barcode']!r}) bukan EAN-13 dummy valid "
                           "(harus 13 digit, digit cek benar, berawalan 2)")
-        if not 0 <= p["weight_min_g"] < p["weight_max_g"]:
-            errors.append(f"Kisaran berat {p['product_id']} tidak valid")
+        if not 0 < p["tare_g"] < p["gross_g"]:
+            errors.append(f"Berat {p['product_id']} tidak valid (harus 0 < tare_g < gross_g)")
     for c in classes:
         if c["kind"] == "product" and c.get("product_id") not in product_ids:
             errors.append(f"Kelas {c['class_id']} menunjuk product_id {c.get('product_id')!r} "
@@ -67,7 +67,7 @@ def fill_daily_limit(db: Database, token: str, cfg: dict, classes: list, product
                 "photo_conf": None,
                 "barcode_present": True,
                 "barcode_valid": True,
-                "weight_g": (product["weight_min_g"] + product["weight_max_g"]) / 2,
+                "weight_g": (product["tare_g"] + product["gross_g"]) / 2,
                 "decision": "ACCEPT",
                 "reason_code": "OK",
                 "photo_path": None,

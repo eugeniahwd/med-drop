@@ -23,9 +23,9 @@ CREATE TABLE IF NOT EXISTS products (
     product_id   TEXT PRIMARY KEY,
     display      TEXT NOT NULL,
     barcode      TEXT NOT NULL UNIQUE,
-    weight_min_g REAL NOT NULL,
-    weight_max_g REAL NOT NULL,
-    CHECK (weight_min_g >= 0 AND weight_max_g > weight_min_g)
+    tare_g       REAL NOT NULL,
+    gross_g      REAL NOT NULL,
+    CHECK (tare_g > 0 AND gross_g > tare_g)
 );
 
 CREATE TABLE IF NOT EXISTS members (
@@ -119,13 +119,13 @@ class Database:
     def upsert_product(self, product: dict) -> None:
         with self._connect() as conn:
             conn.execute(
-                """INSERT INTO products (product_id, display, barcode, weight_min_g, weight_max_g)
-                   VALUES (:product_id, :display, :barcode, :weight_min_g, :weight_max_g)
+                """INSERT INTO products (product_id, display, barcode, tare_g, gross_g)
+                   VALUES (:product_id, :display, :barcode, :tare_g, :gross_g)
                    ON CONFLICT(product_id) DO UPDATE SET
                        display = excluded.display,
                        barcode = excluded.barcode,
-                       weight_min_g = excluded.weight_min_g,
-                       weight_max_g = excluded.weight_max_g""",
+                       tare_g = excluded.tare_g,
+                       gross_g = excluded.gross_g""",
                 product,
             )
 

@@ -7,7 +7,11 @@ classifier:
   min_confidence_floor: 0.50   # di bawah nilai ini barang dianggap tidak teridentifikasi
 
 weight:
-  tolerance_pct: 5             # toleransi (%) di luar kisaran berat produk
+  # Kemasan dianggap KOSONG bila berat <= tare + empty_margin_g + empty_margin_pct% x tare.
+  empty_margin_g: 0.5          # derau timbangan (gram)
+  empty_margin_pct: 3          # variasi berat kemasan kosong antar-produksi (% dari tare)
+  # Barang dianggap TERLALU BERAT bila berat > bruto + gross_tolerance_pct% x bruto.
+  gross_tolerance_pct: 5
 
 points:
   per_valid_deposit: 10        # poin per setoran yang DITERIMA

@@ -16,7 +16,7 @@ def db(tmp_path):
     d = Database(tmp_path / "test.db")
     d.init_schema()
     d.upsert_product({"product_id": "P-T", "display": "Produk uji", "barcode": "2000000000015",
-                      "weight_min_g": 10, "weight_max_g": 50})
+                      "tare_g": 10, "gross_g": 50})
     d.upsert_member("MBR-T1", NOON)
     d.upsert_bin("BIN-T", "Lokasi uji", capacity_g=1000)
     return d
@@ -27,7 +27,7 @@ def attempt(decision, weight_g=40.0, ts=NOON):
         "ts": ts, "bin_id": "BIN-T", "member_token": "MBR-T1", "claimed_product_id": "P-T",
         "photo_class": "entrostop", "photo_conf": 0.9, "barcode_present": True, "barcode_valid": True,
         "weight_g": weight_g, "decision": decision,
-        "reason_code": "OK" if decision == "ACCEPT" else "WEIGHT", "photo_path": None,
+        "reason_code": "OK" if decision == "ACCEPT" else "WEIGHT_OVER", "photo_path": None,
     }
 
 
