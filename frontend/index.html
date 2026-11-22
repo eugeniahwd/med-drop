@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MedDrop</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f4faf7; color: #1d2b24; }
+    main { max-width: 720px; margin: 0 auto; padding: 32px 16px; }
+    .banner { background: #fff3cd; border: 1px solid #e0b800; padding: 8px 12px; font-weight: 600; }
+    pre { background: #fff; border: 1px solid #cfe3d8; padding: 12px; overflow-x: auto; }
+    footer { font-size: 13px; color: #55685e; padding: 16px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="mock-banner" class="banner" hidden>MOCK CLASSIFIER AKTIF: hasil identifikasi foto bukan dari model sungguhan.</div>
+  <main>
+    <h1>MedDrop</h1>
+    <p>Halaman sementara (M0). Mesin 3D dan layar kios dibuat di milestone M4.</p>
+    <h2>Konfigurasi aktif</h2>
+    <pre id="config">Memuat…</pre>
+  </main>
+  <footer>Prototipe simulasi untuk studi kasus. Bukan alat medis dan bukan produk jadi.</footer>
+  <script>
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((cfg) => {
+        document.getElementById("config").textContent = JSON.stringify(cfg, null, 2);
+        document.getElementById("mock-banner").hidden = !cfg.classifier.is_mock;
+      })
+      .catch((e) => {
+        document.getElementById("config").textContent = "Gagal memuat /api/config: " + e;
+      });
+  </script>
+</body>
+</html>

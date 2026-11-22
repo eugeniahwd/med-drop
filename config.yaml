@@ -1,0 +1,18 @@
+# Konfigurasi MedDrop. Dibaca backend saat server dijalankan (restart setelah mengubah).
+
+classifier:
+  backend: mock                # mock | keras. "mock" BUKAN model sungguhan; UI menampilkan banner.
+  threshold_with_qr: 0.60      # keyakinan foto minimum bila ada QR yang valid
+  threshold_photo_only: 0.85   # keyakinan foto minimum bila tanpa QR (lebih ketat)
+  min_confidence_floor: 0.50   # di bawah nilai ini barang dianggap tidak teridentifikasi
+
+weight:
+  tolerance_pct: 5             # toleransi (%) di luar kisaran berat produk
+
+points:
+  per_valid_deposit: 10        # poin per setoran yang DITERIMA
+  daily_limit_deposits: 3      # maksimum setoran valid per anggota per hari
+
+bin:
+  capacity_g: 5000             # kapasitas tempat penampungan (gram)
+  alert_fill_pct: 80           # alert BIN_FULL saat kepenuhan >= nilai ini (%)

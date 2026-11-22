@@ -1,0 +1,93 @@
+{
+  "seed": "meddrop-v1",
+  "val_frac": 0.2,
+  "test_frac": 0.2,
+  "classes": {
+    "entrostop": {
+      "train": [
+        "entrostop-10.jpg",
+        "entrostop-2.jpg",
+        "entrostop-3.jpg",
+        "entrostop-6.jpg",
+        "entrostop-7.jpg",
+        "entrostop-8.png"
+      ],
+      "val": [
+        "entrostop-4.jpg",
+        "entrostop-5.jpg"
+      ],
+      "test": [
+        "entrostop-1.jpg",
+        "entrostop-9.jpg"
+      ]
+    },
+    "fatigon": {
+      "train": [
+        "fatigon-1.jpg",
+        "fatigon-2.jpg",
+        "fatigon-3.jpg",
+        "fatigon-7.jpg",
+        "fatigon-9.jpg"
+      ],
+      "val": [
+        "fatigon-10.jpg",
+        "fatigon-6.jpg"
+      ],
+      "test": [
+        "fatigon-5.jpg",
+        "fatigon-8.jpg"
+      ]
+    },
+    "kalpanax": {
+      "train": [
+        "kalpanax-2.jpg",
+        "kalpanax-4.jpg",
+        "kalpanax-5.jpg",
+        "kalpanax-6.jpg",
+        "kalpanax-7.jpg"
+      ],
+      "val": [
+        "kalpanax-1.jpg",
+        "kalpanax-9.jpg"
+      ],
+      "test": [
+        "kalpanax-10.jpg",
+        "kalpanax-8.jpg"
+      ]
+    },
+    "promag": {
+      "train": [
+        "promag-10.jpg",
+        "promag-2.jpg",
+        "promag-5.png",
+        "promag-6.jpg",
+        "promag-7.jpg"
+      ],
+      "val": [
+        "promag-3.jpg",
+        "promag-9.jpg"
+      ],
+      "test": [
+        "promag-1.jpg",
+        "promag-4.jpg"
+      ]
+    },
+    "woods": {
+      "train": [
+        "woods-1.jpg",
+        "woods-2.jpg",
+        "woods-5.jpg",
+        "woods-7.jpg",
+        "woods-9.png"
+      ],
+      "val": [
+        "woods-4.jpg",
+        "woods-6.jpg"
+      ],
+      "test": [
+        "woods-3.jpg",
+        "woods-8.jpg"
+      ]
+    }
+  }
+}

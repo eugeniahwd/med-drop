@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Data runtime (dibuat ulang oleh skrip / server)
+*.db
+uploads/
