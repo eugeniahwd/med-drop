@@ -26,7 +26,7 @@ def create_app(config: dict | None = None) -> FastAPI:
             "classifier": {
                 "backend": clf["backend"],
                 "is_mock": clf["backend"] == "mock",
-                "threshold_with_qr": clf["threshold_with_qr"],
+                "threshold_with_barcode": clf["threshold_with_barcode"],
                 "threshold_photo_only": clf["threshold_photo_only"],
                 "min_confidence_floor": clf["min_confidence_floor"],
             },

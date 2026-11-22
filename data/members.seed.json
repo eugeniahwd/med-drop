@@ -1,0 +1,8 @@
+{
+  "_catatan": "Anggota FIKTIF untuk demo. Token anonim, tanpa data pribadi.",
+  "members": [
+    {"token": "MBR-0001", "demo_role": "Anggota normal"},
+    {"token": "MBR-0002", "demo_role": "Anggota normal"},
+    {"token": "MBR-0003", "demo_role": "Sudah mencapai batas harian (demo penolakan QUOTA)", "seed_at_daily_limit": true}
+  ]
+}

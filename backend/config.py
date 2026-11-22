@@ -31,7 +31,7 @@ def validate_config(cfg: dict) -> None:
     try:
         clf = cfg["classifier"]
         backend = clf["backend"]
-        t_qr = clf["threshold_with_qr"]
+        t_barcode = clf["threshold_with_barcode"]
         t_photo = clf["threshold_photo_only"]
         floor = clf["min_confidence_floor"]
         tolerance = cfg["weight"]["tolerance_pct"]
@@ -44,11 +44,11 @@ def validate_config(cfg: dict) -> None:
 
     if backend not in VALID_BACKENDS:
         raise ConfigError(f"classifier.backend harus salah satu dari {VALID_BACKENDS}, bukan {backend!r}")
-    for name, value in (("threshold_with_qr", t_qr), ("threshold_photo_only", t_photo),
+    for name, value in (("threshold_with_barcode", t_barcode), ("threshold_photo_only", t_photo),
                         ("min_confidence_floor", floor)):
         if not isinstance(value, (int, float)) or not 0.0 <= value <= 1.0:
             raise ConfigError(f"classifier.{name} harus angka 0..1, bukan {value!r}")
-    if floor > t_qr or floor > t_photo:
+    if floor > t_barcode or floor > t_photo:
         raise ConfigError("classifier.min_confidence_floor tidak boleh lebih besar dari threshold mana pun")
     if not isinstance(tolerance, (int, float)) or tolerance < 0:
         raise ConfigError(f"weight.tolerance_pct harus >= 0, bukan {tolerance!r}")

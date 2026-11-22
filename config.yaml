@@ -2,8 +2,8 @@
 
 classifier:
   backend: mock                # mock | keras. "mock" BUKAN model sungguhan; UI menampilkan banner.
-  threshold_with_qr: 0.60      # keyakinan foto minimum bila ada QR yang valid
-  threshold_photo_only: 0.85   # keyakinan foto minimum bila tanpa QR (lebih ketat)
+  threshold_with_barcode: 0.60 # keyakinan foto minimum bila ada barcode yang valid
+  threshold_photo_only: 0.85   # keyakinan foto minimum bila tanpa barcode (lebih ketat)
   min_confidence_floor: 0.50   # di bawah nilai ini barang dianggap tidak teridentifikasi
 
 weight:

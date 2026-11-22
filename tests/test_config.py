@@ -13,8 +13,8 @@ def test_repo_config_is_valid():
 
 @pytest.mark.parametrize("section, key, bad_value", [
     ("classifier", "backend", "random"),
-    ("classifier", "threshold_with_qr", 1.5),
-    ("classifier", "min_confidence_floor", 0.9),   # lebih tinggi dari threshold_with_qr
+    ("classifier", "threshold_with_barcode", 1.5),
+    ("classifier", "min_confidence_floor", 0.9),   # lebih tinggi dari threshold_with_barcode
     ("weight", "tolerance_pct", -1),
     ("points", "daily_limit_deposits", 2.5),
     ("bin", "capacity_g", 0),

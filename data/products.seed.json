@@ -1,0 +1,45 @@
+{
+  "_catatan": "DATA DUMMY. barcode adalah EAN-13 buatan berawalan 2 (awalan yang dicadangkan GS1 untuk penggunaan internal), bukan GTIN produk asli. weight_min_g dan weight_max_g adalah ESTIMASI PLACEHOLDER yang sengaja dibuat lebar (dari satu strip/kemasan hampir kosong sampai kemasan penuh) dan HARUS DIUKUR ULANG dengan timbangan sebelum dipakai sungguhan.",
+  "products": [
+    {
+      "product_id": "P-A",
+      "display": "Entrostop",
+      "barcode": "2000000000015",
+      "weight_min_g": 5,
+      "weight_max_g": 45,
+      "weight_basis": "Dus 2 strip x 12 tablet (sesuai foto). Perkiraan kasar, belum ditimbang."
+    },
+    {
+      "product_id": "P-B",
+      "display": "Fatigon",
+      "barcode": "2000000000022",
+      "weight_min_g": 3,
+      "weight_max_g": 90,
+      "weight_basis": "Satu strip 6 kaplet sampai dus 10 strip (sesuai foto). Perkiraan kasar, belum ditimbang."
+    },
+    {
+      "product_id": "P-C",
+      "display": "Kalpanax",
+      "barcode": "2000000000039",
+      "weight_min_g": 4,
+      "weight_max_g": 15,
+      "weight_basis": "Tube krim 5 g, dengan atau tanpa dus (sesuai foto). Perkiraan kasar, belum ditimbang."
+    },
+    {
+      "product_id": "P-D",
+      "display": "Promag",
+      "barcode": "2000000000046",
+      "weight_min_g": 3,
+      "weight_max_g": 50,
+      "weight_basis": "Satu blister sampai dus 3 blister x 10 tablet kunyah (sesuai foto). Perkiraan kasar, belum ditimbang."
+    },
+    {
+      "product_id": "P-E",
+      "display": "Woods'",
+      "barcode": "2000000000053",
+      "weight_min_g": 10,
+      "weight_max_g": 120,
+      "weight_basis": "Botol sirup 60 mL kosong sampai penuh, dengan atau tanpa dus (sesuai foto). Perkiraan kasar, belum ditimbang."
+    }
+  ]
+}
