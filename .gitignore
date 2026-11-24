@@ -6,3 +6,18 @@ __pycache__/
 # Data runtime (dibuat ulang oleh skrip / server)
 *.db
 uploads/
+
+# Rahasia: kunci Supabase, kunci perangkat, dan Wi-Fi
+.env
+firmware/include/secrets.h
+
+# Hasil build PlatformIO
+firmware/.pio/
+
+# hanya lokal, tidak masuk repo
+cad/
+docs/laporan.md
+docs/eval/report.md
+docs/eval/metrics.json
+firmware/src/secrets.h
+firmware/.vscode/

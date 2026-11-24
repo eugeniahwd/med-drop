@@ -73,6 +73,14 @@ class Alert(BaseModel):
     resolved: bool
 
 
+class Heartbeat(BaseModel):
+    device_id: str
+    rssi: int | None = None
+    uptime_s: int | None = None
+    firmware: str | None = None
+    ip: str | None = None
+
+
 class Stats(BaseModel):
     totals: dict
     accepted_by_product: list[dict]

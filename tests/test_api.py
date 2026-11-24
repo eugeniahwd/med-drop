@@ -203,3 +203,38 @@ def test_tamper_creates_alert(env):
     assert (alert["type"], alert["resolved"]) == ("TAMPER", False)
     assert client.get("/api/admin/alerts").json()[0]["id"] == alert["id"]
     assert client.post("/api/admin/bins/BIN-XXX/tamper").status_code == 404
+
+
+# ---------- endpoint ESP32 ----------
+
+def test_device_endpoints_need_the_device_key(env, monkeypatch):
+    client, _, _ = env
+    monkeypatch.setenv("DEVICE_KEY", "kunci-uji")
+    assert client.post("/api/device/heartbeat", json={"device_id": BIN}).status_code == 401
+    r = client.post("/api/device/heartbeat", json={"device_id": BIN}, headers={"X-Device-Key": "salah"})
+    assert r.status_code == 401
+
+
+def test_device_verify_answers_briefly_and_sends_a_copy_to_cloud(env, monkeypatch):
+    client, _, _ = env
+    monkeypatch.setenv("DEVICE_KEY", "kunci-uji")
+    sent = []
+    monkeypatch.setattr("backend.cloud.save_transaction", lambda row: sent.append(row) or True)
+    card = items(client)["it-001"]
+    r = client.post("/api/device/verify", headers={"X-Device-Key": "kunci-uji"},
+                    data={"member_token": "MBR-0001", "bin_id": BIN, "weight_g": "20", "barcode_text": "2000000000015"},
+                    files={"photo": ("foto.jpg", client.get(card["photo_url"]).content, "image/jpeg")})
+    assert r.status_code == 200
+    assert r.json()["decision"] == "ACCEPT" and r.json()["product"] == "Entrostop"
+    assert sent[0]["device_id"] == BIN and sent[0]["decision"] == "ACCEPT" and sent[0]["barcode"] == "2000000000015"
+
+
+def test_heartbeat_goes_to_cloud(env, monkeypatch):
+    client, _, _ = env
+    monkeypatch.setenv("DEVICE_KEY", "kunci-uji")
+    beats = []
+    monkeypatch.setattr("backend.cloud.save_heartbeat", lambda **beat: beats.append(beat) or True)
+    r = client.post("/api/device/heartbeat", headers={"X-Device-Key": "kunci-uji"},
+                    json={"device_id": BIN, "rssi": -60, "uptime_s": 42, "firmware": "0.1.0"})
+    assert r.json() == {"ok": True, "saved_to_cloud": True}
+    assert beats[0]["device_id"] == BIN and beats[0]["rssi"] == -60

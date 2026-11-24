@@ -7,17 +7,19 @@ Endpoint admin tidak memakai login karena ini simulasi lokal.
 """
 
 import math
+import os
+import socket
 import uuid
 
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.staticfiles import StaticFiles
 
-from backend import schemas
+from backend import cloud, schemas
 from backend.barcode_reader import read_barcode
 from backend.classifier import load_classifier
-from backend.config import ROOT_DIR, load_classes, load_config
+from backend.config import ROOT_DIR, load_classes, load_config, load_env
 from backend.db import Database, now_wib
 from backend.decision import REASON_TEXTS, decide
 from backend.items import load_items
@@ -27,6 +29,7 @@ UPLOADS_DIR = ROOT_DIR / "uploads"
 
 
 def create_app(config=None, db=None, classifier=None, classes=None, uploads_dir=UPLOADS_DIR):
+    load_env()
     cfg = config or load_config()
     classes = classes or load_classes()
     db = db or Database()
@@ -89,17 +92,19 @@ def create_app(config=None, db=None, classifier=None, classes=None, uploads_dir=
         barcode_image: UploadFile | None = File(None),
         barcode_text: str | None = Form(None),
     ):
+        barcode_bytes = barcode_image.file.read() if barcode_image else None
+        return run_verify(member_token, bin_id, weight_g, photo.file.read(), barcode_bytes, barcode_text)
+
+    def run_verify(member_token, bin_id, weight_g, photo_bytes, barcode_bytes, barcode_text):
+        """Dipakai web simulasi (/api/verify) dan ESP32 (/api/device/verify)."""
         if not math.isfinite(weight_g):
             raise HTTPException(422, "Invalid weight reading.")
         # Dicek sebelum pintu dibuka, jadi tidak dicatat sebagai transaksi.
         member_state(member_token)
         if not bin_state(bin_id)["accepting"]:
             raise HTTPException(409, "This machine is full. Please use another drop-off point.")
-
-        photo_bytes = photo.file.read()
         if cv2.imdecode(np.frombuffer(photo_bytes, np.uint8), cv2.IMREAD_COLOR) is None:
             raise HTTPException(422, "The photo could not be read.")
-        barcode_bytes = barcode_image.file.read() if barcode_image else None
 
         barcode_result = read_barcode(barcode_bytes, barcode_text)
         photo_pred = classifier.predict(photo_bytes)
@@ -136,6 +141,52 @@ def create_app(config=None, db=None, classifier=None, classes=None, uploads_dir=
             "member": member_state(member_token),
             "transaction_id": transaction_id,
             "bin": bin_state(bin_id),
+        }
+
+    # ---------- untuk ESP32 (perangkat asli) ----------
+
+    def check_device_key(key):
+        expected = os.environ.get("DEVICE_KEY", "")
+        if not expected or key != expected:
+            raise HTTPException(401, "Unknown device key.")
+
+    @app.post("/api/device/heartbeat")
+    def device_heartbeat(beat: schemas.Heartbeat, x_device_key: str = Header("")):
+        check_device_key(x_device_key)
+        return {"ok": True, "saved_to_cloud": cloud.save_heartbeat(**beat.model_dump())}
+
+    @app.post("/api/device/verify")
+    def device_verify(
+        member_token: str = Form(...),
+        bin_id: str = Form(...),
+        weight_g: float = Form(...),
+        photo: UploadFile = File(...),
+        barcode_text: str | None = Form(None),
+        x_device_key: str = Header(""),
+    ):
+        check_device_key(x_device_key)
+        result = run_verify(member_token, bin_id, weight_g, photo.file.read(), None, barcode_text)
+        photo_signal = result["signals"]["photo"]
+        cloud.save_transaction({
+            "device_id": bin_id,
+            "member_token": member_token,
+            "barcode": result["signals"]["barcode"]["decoded"],
+            "weight_g": weight_g,
+            "photo_class": photo_signal["class_id"],
+            "photo_conf": photo_signal["confidence"],
+            "decision": result["decision"],
+            "reason_code": result["reason_code"],
+            "points_awarded": result["points_awarded"],
+        })
+        # Jawaban ringkas supaya mudah dibaca ESP32.
+        return {
+            "decision": result["decision"],
+            "reason_code": result["reason_code"],
+            "reason_text": result["reason_text"],
+            "product": photo_signal["display"],
+            "confidence": photo_signal["confidence"],
+            "points_awarded": result["points_awarded"],
+            "points_total": result["member"]["points_total"],
         }
 
     # ---------- untuk dashboard admin ----------
@@ -194,7 +245,19 @@ def save_photo(uploads_dir, photo_bytes, now):
     return f"uploads/{folder.name}/{name}"
 
 
+def lan_ip():
+    """IP laptop di jaringan Wi-Fi (untuk SERVER_URL di firmware ESP32). Tidak mengirim data apa pun."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        try:
+            s.connect(("10.255.255.255", 1))
+            return s.getsockname()[0]
+        except OSError:
+            return "127.0.0.1"
+
+
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("backend.main:create_app", factory=True, host="127.0.0.1", port=8000)
+    print(f"Web simulasi: http://127.0.0.1:8000   |   untuk ESP32: http://{lan_ip()}:8000")
+    # 0.0.0.0 supaya ESP32 di Wi-Fi yang sama bisa mengakses server ini.
+    uvicorn.run("backend.main:create_app", factory=True, host="0.0.0.0", port=8000)
